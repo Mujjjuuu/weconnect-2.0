@@ -1,0 +1,7 @@
+{
+  "name": "WeConnect - AI Influencer Platform",
+  "description": "A cutting-edge influencer marketing platform connecting brands and creators using AI-driven matching, content analysis, and discovery feeds.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
