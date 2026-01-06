@@ -1,21 +1,80 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Campaign, AIAnalysisResult } from '../types';
 import { Icons } from '../constants';
-import { analyzeContent, getPostCampaignInsights } from '../services/geminiService';
+import { analyzeContent, getPostCampaignInsights, generateCampaignStrategy } from '../services/geminiService';
+import { supabase, isSupabaseConfigured } from '../services/supabase';
 
-const MOCK_CAMPAIGNS: Campaign[] = [
-  { id: '1', name: 'Summer Launch', status: 'active', budget: '$2,500', progress: 60, deliverables: ['1x Reel', '2x Stories'], influencersCount: 4 },
-  { id: '2', name: 'Valentine\'s Promo', status: 'completed', budget: '$1,200', progress: 100, deliverables: ['1x TikTok'], influencersCount: 2 },
-  { id: '3', name: 'Eco-Friendly Line', status: 'draft', budget: '$5,000', progress: 10, deliverables: ['3x UGC Videos'], influencersCount: 0 },
-  { id: '4', name: 'Winter Essentials', status: 'completed', budget: '$3,800', progress: 100, deliverables: ['2x Reels'], influencersCount: 3 },
-];
+interface CampaignManagerProps {
+  sharedCampaigns: Campaign[];
+  onUpdateCampaigns: (newList: Campaign[]) => void;
+}
 
-const CampaignManager: React.FC = () => {
+const CampaignManager: React.FC<CampaignManagerProps> = ({ sharedCampaigns, onUpdateCampaigns }) => {
+  const [view, setView] = useState<'list' | 'create' | 'review'>('list');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  
+  // Form State
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    budget: '',
+    deliverables: '',
+    platform: 'Instagram'
+  });
+
+  // Review State
   const [reviewImage, setReviewImage] = useState<string | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewResult, setReviewResult] = useState<{ analysis: AIAnalysisResult, insights: string } | null>(null);
+
+  const handleAiAssist = async () => {
+    if (!aiPrompt) return;
+    setIsAiLoading(true);
+    try {
+      const strategy = await generateCampaignStrategy(aiPrompt);
+      if (strategy) {
+        setFormData({
+          name: strategy.name,
+          budget: strategy.budget,
+          deliverables: strategy.deliverables.join(', '),
+          platform: 'All Platforms'
+        });
+      }
+    } catch (err) {
+      console.error("AI Assistant Failed:", err);
+      alert("AI draft failed. Please try again.");
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleCreate = async () => {
+    const newCamp: Campaign = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: formData.name,
+      budget: formData.budget,
+      deliverables: formData.deliverables.split(',').map(s => s.trim()),
+      status: 'active',
+      progress: 0,
+      influencersCount: 0,
+      brandName: 'My Brand'
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('campaigns').insert([newCamp]);
+      } catch (e) {
+        console.error("DB Insert error:", e);
+      }
+    }
+    
+    onUpdateCampaigns([newCamp, ...sharedCampaigns]);
+    setView('list');
+    setFormData({ name: '', budget: '', deliverables: '', platform: 'Instagram' });
+    setAiPrompt('');
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,139 +102,235 @@ const CampaignManager: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="max-w-7xl mx-auto py-12 px-4 animate-in fade-in duration-1000">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
         <div>
-          <h1 className="text-3xl font-black text-gray-900">Campaign Manager</h1>
-          <p className="text-gray-500">Track performance and review content quality.</p>
+          <h1 className="text-5xl font-black text-gray-900 tracking-tight">Campaigns</h1>
+          <p className="text-gray-500 mt-2 font-medium text-lg">Manage your collaborations and track your progress.</p>
         </div>
+        {view === 'list' && (
+          <button 
+            onClick={() => setView('create')}
+            className="bg-purple-600 text-white px-10 py-5 rounded-3xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-purple-700 transition-all flex items-center space-x-3"
+          >
+            <Icons.Campaigns />
+            <span>New Campaign</span>
+          </button>
+        )}
       </div>
 
-      {!selectedCampaign ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MOCK_CAMPAIGNS.map(c => (
-            <div key={c.id} className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:border-purple-200 transition-all group">
-              <div className="flex justify-between items-start mb-4">
-                <div className={`p-3 rounded-2xl ${c.status === 'completed' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+      {view === 'list' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          {sharedCampaigns.map(c => (
+            <div key={c.id} className="bg-white p-10 rounded-[48px] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group flex flex-col">
+              <div className="flex justify-between items-start mb-8">
+                <div className={`p-5 rounded-2xl ${c.status === 'completed' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
                   <Icons.Campaigns />
                 </div>
-                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                <span className={`px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest ${
                   c.status === 'completed' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'
-                }`}>{c.status}</span>
+                }`}>{c.status === 'completed' ? 'Finished' : 'Running'}</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-1">{c.name}</h3>
-              <p className="text-sm text-gray-500 mb-6">{c.deliverables.join(' • ')}</p>
               
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Budget</p>
-                  <p className="font-bold text-gray-900">{c.budget}</p>
+              <h3 className="text-3xl font-black text-gray-900 mb-2 leading-tight tracking-tight">{c.name}</h3>
+              <p className="text-xs text-gray-400 font-black uppercase tracking-widest mb-6">Partner: {c.brandName || 'Verified Brand'}</p>
+              
+              <div className="space-y-4 mb-8 mt-auto">
+                <div className="flex justify-between text-[10px] font-black uppercase text-gray-300">
+                  <span>Progress</span>
+                  <span>{c.progress}%</span>
                 </div>
-                {c.status === 'completed' ? (
-                  <button 
-                    onClick={() => setSelectedCampaign(c)}
-                    className="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-purple-700 transition-colors"
-                  >
-                    Generate Post-Mortem
-                  </button>
-                ) : (
-                  <button className="text-purple-600 text-xs font-bold hover:underline">View Details</button>
-                )}
+                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                  <div className="bg-purple-600 h-full transition-all duration-1000" style={{width: `${c.progress}%`}}></div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-8 border-t border-gray-50">
+                <div>
+                  <p className="text-[9px] text-gray-400 font-black uppercase mb-1">Budget</p>
+                  <p className="font-black text-gray-900 text-xl tracking-tighter">{c.budget}</p>
+                </div>
+                <button 
+                  onClick={() => { setSelectedCampaign(c); setView('review'); }}
+                  className="bg-gray-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all"
+                >
+                  {c.status === 'completed' ? 'See Review' : 'Manage'}
+                </button>
               </div>
             </div>
           ))}
         </div>
-      ) : (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      )}
+
+      {view === 'create' && (
+        <div className="bg-white rounded-[64px] p-16 shadow-3xl border border-gray-50 max-w-5xl mx-auto relative overflow-hidden">
+          <div className="flex justify-between items-center mb-16">
+            <h2 className="text-4xl font-black text-gray-900 tracking-tighter">Start a New Campaign</h2>
+            <button onClick={() => setView('list')} className="p-4 hover:bg-gray-50 rounded-2xl transition-all text-gray-300 hover:text-gray-900">
+              <Icons.Close />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            {/* AI Assist */}
+            <div className="space-y-8 bg-gray-50 p-10 rounded-[48px]">
+               <div className="flex items-center space-x-3 text-purple-600 mb-6 font-black uppercase text-xs">
+                 <Icons.Robot />
+                 <span>AI Helper</span>
+               </div>
+               <p className="text-gray-600 font-medium">Tell us what you want to do, and we'll help you plan it.</p>
+               <textarea 
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Example: I want to promote my new organic skincare brand to people who love nature..."
+                className="w-full p-6 bg-white border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 min-h-[160px] resize-none font-medium"
+               />
+               <button 
+                onClick={handleAiAssist}
+                disabled={isAiLoading || !aiPrompt}
+                className="w-full bg-purple-600 text-white py-5 rounded-3xl font-black text-xs uppercase tracking-widest shadow-xl disabled:opacity-50 transition-all flex items-center justify-center space-x-3"
+               >
+                {isAiLoading ? 'Writing...' : 'Generate Plan'}
+               </button>
+            </div>
+
+            {/* Manual Form */}
+            <div className="space-y-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Campaign Title</label>
+                <input 
+                  type="text" 
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full p-6 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 text-lg shadow-inner"
+                  placeholder="e.g. Summer Skincare Launch"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Budget</label>
+                  <input 
+                    type="text" 
+                    value={formData.budget}
+                    onChange={(e) => setFormData({...formData, budget: e.target.value})}
+                    className="w-full p-6 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 shadow-inner"
+                    placeholder="$1,000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Best Platform</label>
+                  <select 
+                    value={formData.platform}
+                    onChange={(e) => setFormData({...formData, platform: e.target.value})}
+                    className="w-full p-6 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 appearance-none shadow-inner"
+                  >
+                    <option>Instagram</option>
+                    <option>TikTok</option>
+                    <option>YouTube</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">What's the goal?</label>
+                <textarea 
+                  value={formData.deliverables}
+                  onChange={(e) => setFormData({...formData, deliverables: e.target.value})}
+                  className="w-full p-6 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 min-h-[120px] resize-none shadow-inner"
+                  placeholder="e.g. 2 Reels, 5 Stories"
+                />
+              </div>
+
+              <button 
+                onClick={handleCreate}
+                disabled={!formData.name || !formData.budget}
+                className="w-full bg-gray-900 text-white py-6 rounded-3xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-black transition-all active:scale-95 disabled:opacity-20"
+              >
+                Launch This Campaign
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {view === 'review' && selectedCampaign && (
+        <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000">
           <button 
-            onClick={() => { setSelectedCampaign(null); setReviewResult(null); setReviewImage(null); }}
-            className="flex items-center space-x-2 text-gray-500 hover:text-purple-600 font-bold text-sm mb-6"
+            onClick={() => { setView('list'); setReviewResult(null); setReviewImage(null); }}
+            className="flex items-center space-x-3 text-gray-400 hover:text-purple-600 font-black text-xs uppercase tracking-widest mb-12 transition-colors"
           >
             <Icons.Close />
-            <span>Back to Campaigns</span>
+            <span>Go Back</span>
           </button>
 
-          <div className="bg-white rounded-[40px] p-8 shadow-sm border border-gray-100">
-            <div className="flex flex-col lg:flex-row gap-12">
-              <div className="lg:w-1/2 space-y-6">
-                <h2 className="text-2xl font-black text-gray-900">Reviewing: {selectedCampaign.name}</h2>
-                <p className="text-gray-500">Upload a key piece of content from this campaign. Our AI will assess its success and provide strategic advice for your future growth.</p>
-                
-                <div className={`relative aspect-video rounded-[32px] border-2 border-dashed ${reviewImage ? 'border-purple-200' : 'border-gray-200'} bg-gray-50 flex flex-col items-center justify-center overflow-hidden transition-all`}>
+          <div className="bg-white rounded-[64px] p-16 shadow-3xl border border-gray-50 flex flex-col lg:flex-row gap-16">
+            <div className="lg:w-1/2 space-y-10">
+               <h2 className="text-5xl font-black text-gray-900 tracking-tighter">Performance Review</h2>
+               <p className="text-gray-500 font-medium text-lg">AI insights for <span className="text-purple-600">"{selectedCampaign.name}"</span></p>
+               
+               <div className={`relative aspect-video rounded-[40px] border-4 border-dashed transition-all group overflow-hidden ${
+                 reviewImage ? 'border-purple-200 shadow-xl shadow-purple-50' : 'border-gray-100 bg-gray-50/50 hover:bg-gray-50'
+               }`}>
                   {reviewImage ? (
-                    <img src={reviewImage} alt="Review" className="w-full h-full object-cover" />
+                    <img src={reviewImage} alt="Audit Media" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="text-center p-8">
-                      <Icons.Analytics />
-                      <p className="mt-4 text-sm font-bold text-gray-600">Drop campaign content here</p>
-                      <p className="text-xs text-gray-400 mt-1">Upload the top performing video frame</p>
+                    <div className="h-full flex flex-col items-center justify-center text-center p-12">
+                      <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-xl mx-auto mb-6 text-purple-600">
+                        <Icons.Analytics />
+                      </div>
+                      <p className="text-sm font-black text-gray-900 uppercase tracking-widest">Upload Campaign Image</p>
+                      <p className="text-xs text-gray-400 font-medium mt-2">Upload your best photo from the campaign.</p>
                     </div>
                   )}
                   <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileChange} />
+               </div>
+
+               <button 
+                onClick={startReview}
+                disabled={!reviewImage || isReviewing}
+                className={`w-full py-6 rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center space-x-4 transition-all ${
+                  !reviewImage || isReviewing ? 'bg-gray-100 text-gray-400' : 'bg-purple-600 text-white hover:bg-purple-700 shadow-2xl active:scale-95'
+                }`}
+               >
+                {isReviewing ? 'Processing...' : 'Run Performance Review'}
+               </button>
+            </div>
+
+            <div className="lg:w-1/2">
+              {reviewResult ? (
+                <div className="space-y-10 animate-in fade-in slide-in-from-right-12 duration-1000">
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="bg-white p-8 rounded-[32px] border border-gray-50 shadow-sm text-center">
+                      <p className="text-4xl font-black text-purple-600 mb-2">{reviewResult.analysis.creativityScore}%</p>
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Quality</p>
+                    </div>
+                    <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm text-center">
+                      <p className="text-4xl font-black text-blue-600 mb-2">{reviewResult.analysis.engagementPotential}%</p>
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Reach</p>
+                    </div>
+                    <div className="bg-white p-8 rounded-[32px] border border-gray-50 shadow-sm text-center">
+                      <p className="text-4xl font-black text-green-600 mb-2">{reviewResult.analysis.brandFriendliness}%</p>
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Good Fit</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-900 rounded-[48px] p-12 text-white shadow-2xl">
+                    <h3 className="text-2xl font-black mb-8 text-purple-400">AI Recommendations</h3>
+                    <div className="prose prose-sm prose-invert leading-loose text-gray-300 whitespace-pre-line font-medium text-lg">
+                      {reviewResult.insights}
+                    </div>
+                  </div>
                 </div>
-
-                <button 
-                  onClick={startReview}
-                  disabled={!reviewImage || isReviewing}
-                  className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center space-x-2 transition-all ${
-                    !reviewImage || isReviewing ? 'bg-gray-100 text-gray-400' : 'bg-purple-600 text-white hover:bg-purple-700 shadow-xl'
-                  }`}
-                >
-                  {isReviewing ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      <span>Analyzing Success Metrics...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <Icons.Robot />
-                      <span>Generate AI Success Analysis</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <div className="lg:w-1/2">
-                {reviewResult ? (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100 text-center">
-                        <p className="text-2xl font-black text-purple-600">{reviewResult.analysis.creativityScore}%</p>
-                        <p className="text-[10px] text-purple-400 font-bold uppercase">Creativity</p>
-                      </div>
-                      <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-center">
-                        <p className="text-2xl font-black text-blue-600">{reviewResult.analysis.engagementPotential}%</p>
-                        <p className="text-[10px] text-blue-400 font-bold uppercase">Engagement</p>
-                      </div>
-                      <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-center">
-                        <p className="text-2xl font-black text-green-600">{reviewResult.analysis.brandFriendliness}%</p>
-                        <p className="text-[10px] text-green-400 font-bold uppercase">ROI Likelihood</p>
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-900 rounded-3xl p-6 text-white relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Icons.Robot />
-                      </div>
-                      <h3 className="text-lg font-bold mb-4 text-purple-300">AI Post-Mortem Insights</h3>
-                      <div className="prose prose-sm prose-invert leading-relaxed text-gray-300 whitespace-pre-line">
-                        {reviewResult.insights}
-                      </div>
-                    </div>
-
-                    <div className="p-6 bg-purple-50 rounded-3xl border border-purple-100">
-                      <h4 className="font-bold text-purple-900 mb-2">Content Performance Summary</h4>
-                      <p className="text-sm text-purple-800 opacity-80 italic">"{reviewResult.analysis.summary}"</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-12 bg-gray-50 rounded-[40px] opacity-40">
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-20 bg-gray-50/20 rounded-[64px] border-2 border-dashed border-gray-100">
+                  <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-gray-200 mb-8 shadow-inner">
                     <Icons.Robot />
-                    <p className="mt-4 font-bold text-gray-500">Strategic Insights Preview</p>
-                    <p className="text-xs text-gray-400 mt-2 max-w-xs">AI will calculate ROI potential and suggest pivots once content is analyzed.</p>
                   </div>
-                )}
-              </div>
+                  <h4 className="text-2xl font-black text-gray-400 uppercase tracking-widest">Waiting for Image</h4>
+                  <p className="text-sm text-gray-400 max-w-sm leading-loose font-medium">Upload a photo on the left to see your AI score and tips.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

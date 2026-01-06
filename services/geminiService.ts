@@ -2,8 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIAnalysisResult } from "../types";
 
-// Always initialize with named parameters as per guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Always initialize with named parameters as per guidelines, using API key directly
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const analyzeContent = async (imageBase64: string): Promise<AIAnalysisResult> => {
   try {
@@ -31,11 +31,36 @@ export const analyzeContent = async (imageBase64: string): Promise<AIAnalysisRes
       }
     });
 
-    // Property-based access (no method call)
     return JSON.parse(response.text || "{}");
   } catch (error) {
     console.error("AI Content Analysis failed:", error);
     throw error;
+  }
+};
+
+export const generateCampaignStrategy = async (prompt: string): Promise<any> => {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-pro-preview",
+      contents: { parts: [{ text: `Create a detailed influencer campaign strategy for: ${prompt}. Return JSON with: name, budget (string like $X,XXX), deliverables (array of strings), and strategy (detailed string).` }] },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            budget: { type: Type.STRING },
+            deliverables: { type: Type.ARRAY, items: { type: Type.STRING } },
+            strategy: { type: Type.STRING }
+          },
+          required: ["name", "budget", "deliverables", "strategy"]
+        }
+      }
+    });
+    return JSON.parse(response.text || "{}");
+  } catch (error) {
+    console.error("AI Strategy generation failed:", error);
+    return null;
   }
 };
 

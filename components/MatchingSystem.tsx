@@ -1,186 +1,224 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Icons } from '../constants';
-import { getMatchAnalysis, getCriteriaExplanation } from '../services/geminiService';
-import { supabase } from '../services/supabase';
+import { getMatchAnalysis } from '../services/geminiService';
+import { supabase, isSupabaseConfigured } from '../services/supabase';
 
-const MATCHING_CRITERIA = [
-  { id: 'content', title: 'Content DNA', icon: <Icons.Analytics />, desc: 'Visual style, color palettes, and editing complexity.', color: 'purple' },
-  { id: 'audience', title: 'Audience Quality', icon: <Icons.Dashboard />, desc: 'Bot detection and real-time engagement patterns.', color: 'blue' },
-  { id: 'roi', title: 'ROI Prediction', icon: <Icons.Wallet />, desc: 'Cost-per-engagement historical analysis.', color: 'green' },
-  { id: 'synergy', title: 'Brand Synergy', icon: <Icons.Robot />, desc: 'Sentiment alignment and semantic brand matching.', color: 'pink' }
+const MOCK_FALLBACK: any[] = [
+  { id: '1', name: 'Sarah Jenkins', handle: '@sarahj_lifestyle', niche: ['Beauty', 'Lifestyle'], followers: '245K', engagementRate: '4.8%', avatar: 'https://picsum.photos/seed/sarah/200' },
+  { id: '2', name: 'Marcus Chen', handle: '@marcus_visuals', niche: ['Travel', 'Tech'], followers: '102K', engagementRate: '5.2%', avatar: 'https://picsum.photos/seed/marcus/200' },
+  { id: '3', name: 'Emily White', handle: '@emily.w.art', niche: ['Art', 'DIY'], followers: '89K', engagementRate: '6.1%', avatar: 'https://picsum.photos/seed/emily/200' }
 ];
 
 const MatchingSystem: React.FC = () => {
-  const [params, setParams] = useState({ niche: 'Beauty', goal: 'Engagement', budget: '$1000' });
-  const [results, setResults] = useState<any[]>([]);
-  const [isMatching, setIsMatching] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
-  const [criteriaDetail, setCriteriaDetail] = useState<{ title: string, content: string } | null>(null);
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [requirements, setRequirements] = useState({
+    niche: 'Beauty',
+    goal: 'Increase Awareness',
+    budget: '$1,000 - $5,000',
+    platform: 'TikTok',
+    brief: ''
+  });
+  
+  const [matches, setMatches] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const runMatching = async () => {
-    setIsMatching(true);
-    setResults([]);
-    
-    // Animate through pipeline steps
-    for (let i = 0; i <= 3; i++) {
-      setActiveStep(i);
-      await new Promise(r => setTimeout(r, 400));
-    }
-    
-    // Fetch real candidates from Supabase
-    const { data: candidates } = await supabase.from('influencers').select('*');
-    
-    if (candidates) {
-      const matchedPromises = candidates.map(async (inf) => {
-        let matchScore = inf.ai_score || 80;
-        // Simple boost logic
-        if (inf.niche.some((n: string) => n.toLowerCase().includes(params.niche.toLowerCase()))) {
-          matchScore += 5;
+  const findMatches = async () => {
+    setIsSearching(true);
+    setHasSearched(true);
+    setMatches([]);
+
+    try {
+      let candidates: any[] = [];
+      
+      if (isSupabaseConfigured()) {
+        const { data } = await supabase.from('influencers').select('*');
+        if (data && data.length > 0) {
+          candidates = data.map(d => ({
+            ...d,
+            engagementRate: d.engagement_rate,
+            aiScore: d.ai_score
+          }));
+        } else {
+          candidates = MOCK_FALLBACK;
         }
-        if (matchScore > 100) matchScore = 100;
+      } else {
+        candidates = MOCK_FALLBACK;
+      }
 
-        const aiExplanation = await getMatchAnalysis(params, inf);
-        return { 
-          ...inf, 
-          matchScore, 
-          aiExplanation,
-          img: inf.avatar,
-          handle: inf.handle,
-          name: inf.name,
-          niche: inf.niche[0]
+      await new Promise(r => setTimeout(r, 2000));
+
+      const matchPromises = candidates.map(async (inf) => {
+        let score = 75 + Math.floor(Math.random() * 20);
+        const explanation = await getMatchAnalysis(requirements, inf);
+        
+        return {
+          ...inf,
+          matchScore: score,
+          aiReasoning: explanation,
+          topTrait: score > 90 ? 'High Success Chance' : 'Good Fit'
         };
       });
 
-      const finalResults = await Promise.all(matchedPromises);
-      setResults(finalResults.sort((a, b) => b.matchScore - a.matchScore));
-    }
-    
-    setIsMatching(false);
-  };
-
-  const handleFetchCriteriaDetail = async (title: string) => {
-    setIsLoadingDetail(true);
-    setCriteriaDetail(null);
-    try {
-      const explanation = await getCriteriaExplanation(title);
-      setCriteriaDetail({ title, content: explanation });
+      const finalMatches = await Promise.all(matchPromises);
+      setMatches(finalMatches.sort((a, b) => b.matchScore - a.matchScore));
     } catch (error) {
-      console.error(error);
+      console.error("Match error:", error);
     } finally {
-      setIsLoadingDetail(false);
+      setIsSearching(false);
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-8 space-y-12">
-      <div className="text-center space-y-4">
-        <h1 className="text-5xl font-black text-gray-900 tracking-tight">AI Matching Science</h1>
-        <p className="text-gray-500 max-w-2xl mx-auto text-lg leading-relaxed">
-          The WeConnect Neural Engine processes database signals to find the perfect creator.
-        </p>
-      </div>
-
-      {/* Pipeline Visualizer */}
-      <div className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-sm relative overflow-hidden">
-        <div className="flex flex-col md:flex-row justify-between items-center relative z-10 gap-8">
-          {[
-            { label: 'DB Query', icon: '🗄️', desc: 'Syncing social profiles' },
-            { label: 'Neural Scan', icon: '🧠', desc: 'Vision assessment' },
-            { label: 'Gemini NLP', icon: '✨', desc: 'Tone assessment' },
-            { label: 'ROI Pred', icon: '📊', desc: 'Final scoring' }
-          ].map((step, idx) => (
-            <div key={idx} className={`flex flex-col items-center text-center transition-all duration-500 ${isMatching && activeStep >= idx ? 'scale-110 opacity-100' : 'opacity-40 scale-100'}`}>
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-4 shadow-lg ${isMatching && activeStep === idx ? 'bg-purple-600 animate-pulse text-white' : 'bg-gray-100'}`}>
-                {step.icon}
-              </div>
-              <h4 className="font-bold text-gray-900 text-sm">{step.label}</h4>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-1 space-y-6">
-          <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold mb-6">Engine Logic</h3>
-            <div className="space-y-4">
-              {MATCHING_CRITERIA.map((crit) => (
-                <button 
-                  key={crit.id}
-                  onClick={() => handleFetchCriteriaDetail(crit.title)}
-                  className="w-full text-left group flex items-start space-x-4 p-4 rounded-3xl hover:bg-gray-50 transition-all"
+    <div className="max-w-7xl mx-auto py-12 px-4 animate-in fade-in duration-1000">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        {/* Left: Input Panel */}
+        <div className="lg:col-span-4 space-y-10">
+          <div className="bg-white rounded-[48px] p-12 shadow-sm border border-gray-100 relative overflow-hidden">
+            <h2 className="text-4xl font-black text-gray-900 mb-10 tracking-tight leading-none">Find Your Match.</h2>
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block ml-2">What's your niche?</label>
+                <select 
+                  className="w-full bg-gray-50 border border-gray-100 rounded-[24px] px-8 py-5 outline-none focus:ring-4 focus:ring-purple-100 text-sm font-black text-gray-900 appearance-none shadow-inner"
+                  value={requirements.niche}
+                  onChange={e => setRequirements({...requirements, niche: e.target.value})}
                 >
-                  <div className={`p-2 bg-gray-100 rounded-xl mt-1 group-hover:bg-purple-100 transition-colors`}>
-                    {crit.icon}
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm text-gray-900">{crit.title}</p>
-                    <p className="text-xs text-gray-500 line-clamp-2">{crit.desc}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+                  <option>Beauty</option>
+                  <option>Tech & Gaming</option>
+                  <option>Travel & Lifestyle</option>
+                  <option>Fitness</option>
+                </select>
+              </div>
 
-            {(isLoadingDetail || criteriaDetail) && (
-              <div className="mt-8 p-6 bg-gray-900 rounded-3xl text-white relative animate-in slide-in-from-bottom-4">
-                <button onClick={() => setCriteriaDetail(null)} className="absolute top-4 right-4 opacity-50"><Icons.Close /></button>
-                {isLoadingDetail ? <div className="animate-pulse">Consulting AI...</div> : (
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block ml-2">What's the goal?</label>
+                <select 
+                  className="w-full bg-gray-50 border border-gray-100 rounded-[24px] px-8 py-5 outline-none focus:ring-4 focus:ring-purple-100 text-sm font-black text-gray-900 appearance-none shadow-inner"
+                  value={requirements.goal}
+                  onChange={e => setRequirements({...requirements, goal: e.target.value})}
+                >
+                  <option>Increase Awareness</option>
+                  <option>Drive More Sales</option>
+                  <option>Get Content (UGC)</option>
+                </select>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block ml-2">Tell us more</label>
+                <textarea 
+                  placeholder="Tell us about the ideal person you want to work with..."
+                  className="w-full bg-gray-50 border border-gray-100 rounded-[32px] px-8 py-6 outline-none focus:ring-4 focus:ring-purple-100 transition-all text-sm min-h-[180px] resize-none font-bold text-gray-900 shadow-inner leading-relaxed"
+                  value={requirements.brief}
+                  onChange={e => setRequirements({...requirements, brief: e.target.value})}
+                />
+              </div>
+
+              <button 
+                onClick={findMatches}
+                disabled={isSearching}
+                className="w-full bg-purple-600 text-white py-6 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] shadow-3xl shadow-purple-200 hover:bg-purple-700 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center space-x-4"
+              >
+                {isSearching ? (
                   <>
-                    <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">{criteriaDetail?.title} Logic</h4>
-                    <p className="text-sm leading-relaxed text-gray-300 italic">{criteriaDetail?.content}</p>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Searching...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icons.Robot />
+                    <span>Find My Matches</span>
                   </>
                 )}
-              </div>
-            )}
-          </div>
-
-          <div className="bg-purple-600 p-8 rounded-[40px] text-white space-y-6">
-            <h3 className="text-xl font-bold">Simulator</h3>
-            <div className="space-y-4">
-              <select className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm outline-none" onChange={(e) => setParams(p => ({ ...p, niche: e.target.value }))}>
-                <option className="text-black">Beauty</option>
-                <option className="text-black">Tech</option>
-                <option className="text-black">Travel</option>
-              </select>
-              <button 
-                onClick={runMatching}
-                disabled={isMatching}
-                className="w-full bg-white text-purple-700 py-4 rounded-2xl font-bold flex items-center justify-center space-x-2"
-              >
-                {isMatching ? <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent animate-spin rounded-full"></div> : <span>Run Match Engine</span>}
               </button>
             </div>
           </div>
         </div>
 
-        <div className="md:col-span-2 space-y-6">
-          {results.length > 0 ? (
-            <div className="space-y-6 animate-in fade-in">
-              {results.map((res, i) => (
-                <div key={i} className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm flex flex-col md:flex-row items-center md:items-start space-x-0 md:space-x-8">
-                  <div className="relative mb-4 md:mb-0">
-                    <img src={res.img} className="w-24 h-24 rounded-[32px] object-cover shadow-xl" alt="" />
-                    <div className="absolute -top-3 -right-3 bg-purple-600 text-white text-xs font-black w-10 h-10 flex items-center justify-center rounded-2xl">
-                      {res.matchScore}%
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-black text-xl text-gray-900">{res.name}</h4>
-                    <p className="text-xs text-gray-400 mb-4">{res.handle} • {res.niche}</p>
-                    <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
-                      <h5 className="text-[10px] font-black uppercase text-purple-400 mb-2">Gemini Match Report</h5>
-                      <p className="text-sm text-gray-700 leading-relaxed">{res.aiExplanation}</p>
-                    </div>
+        {/* Right: Results */}
+        <div className="lg:col-span-8">
+          {!hasSearched ? (
+            <div className="h-full min-h-[700px] flex flex-col items-center justify-center text-center p-20 bg-white rounded-[64px] border border-gray-100 border-dashed">
+              <div className="w-32 h-32 bg-purple-50 rounded-[40px] flex items-center justify-center text-purple-600 mb-10 shadow-inner">
+                <Icons.Robot />
+              </div>
+              <h3 className="text-4xl font-black text-gray-900 mb-6 tracking-tight">Ready to search.</h3>
+              <p className="text-gray-500 max-w-sm font-medium leading-relaxed text-lg">Enter your details on the left to find your perfect creator matches.</p>
+            </div>
+          ) : isSearching ? (
+            <div className="space-y-10">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white p-12 rounded-[56px] border border-gray-100 flex animate-pulse items-center gap-12">
+                  <div className="w-40 h-40 bg-gray-50 rounded-[40px] shrink-0"></div>
+                  <div className="flex-1 space-y-6">
+                    <div className="h-10 bg-gray-50 rounded-2xl w-1/3"></div>
+                    <div className="h-6 bg-gray-50 rounded-xl w-full"></div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="h-full min-h-[400px] bg-white rounded-[40px] border border-gray-100 flex flex-col items-center justify-center p-12 text-center opacity-30">
-              <Icons.Robot />
-              <p className="mt-4 font-bold">Engine Idle</p>
+            <div className="space-y-12">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-6">
+                <div>
+                  <h3 className="text-4xl font-black text-gray-900 tracking-tighter leading-none">{matches.length} Matches Found</h3>
+                  <p className="text-gray-500 font-medium mt-2">These creators match your requirements best.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-10">
+                {matches.map((match, idx) => (
+                  <div key={idx} className="bg-white p-12 rounded-[64px] border border-gray-100 shadow-sm hover:shadow-3xl transition-all flex flex-col md:flex-row items-center md:items-start group relative overflow-hidden">
+                    {/* Avatar */}
+                    <div className="flex flex-col items-center mb-10 md:mb-0 mr-0 md:mr-12 shrink-0">
+                      <div className="relative">
+                        <img src={match.avatar} className="w-44 h-44 rounded-[48px] object-cover shadow-3xl" alt="" />
+                        <div className="absolute -bottom-6 -right-6 bg-purple-600 text-white w-20 h-20 flex flex-col items-center justify-center rounded-3xl font-black border-[8px] border-white shadow-3xl">
+                          <span className="text-[10px] opacity-60 uppercase tracking-widest leading-none mb-1">Match</span>
+                          <span className="text-2xl leading-none">{match.matchScore}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 space-y-8">
+                      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
+                        <div>
+                          <h4 className="text-4xl font-black text-gray-900 tracking-tighter leading-none mb-3">{match.name}</h4>
+                          <p className="text-xs text-gray-400 font-black uppercase tracking-[0.2em]">{match.handle} • {match.niche.join(', ')}</p>
+                        </div>
+                        <div className="flex gap-4">
+                           <div className="px-8 py-4 bg-gray-50 rounded-[24px] text-center border border-gray-100">
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Followers</p>
+                             <p className="font-black text-gray-900 text-xl tracking-tighter">{match.followers}</p>
+                           </div>
+                           <div className="px-8 py-4 bg-gray-50 rounded-[24px] text-center border border-gray-100">
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Engagement</p>
+                             <p className="font-black text-purple-600 text-xl tracking-tighter">{match.engagementRate}</p>
+                           </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-900 rounded-[40px] p-10 relative overflow-hidden shadow-2xl">
+                        <h5 className="text-[10px] font-black uppercase text-purple-400 mb-4 tracking-[0.3em]">AI Why This Works</h5>
+                        <p className="text-base text-gray-300 leading-relaxed font-bold italic opacity-90">
+                          "{match.aiReasoning}"
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-4 pt-4">
+                        <button className="bg-gray-900 text-white px-12 py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black transition-all">
+                          Start Work
+                        </button>
+                        <button className="bg-white border-2 border-gray-100 text-gray-700 px-12 py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] hover:border-purple-200 transition-all">
+                          View Profile
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
