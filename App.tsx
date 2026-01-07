@@ -55,13 +55,13 @@ const App: React.FC = () => {
       
       if (!error && data) {
         setCampaigns(data.map(c => ({
-          id: c.id,
+          id: String(c.id),
           name: c.name,
-          status: c.status,
+          status: (c.status as any) || 'active',
           budget: c.budget,
-          progress: c.progress,
-          deliverables: c.deliverables,
-          influencersCount: c.influencers_count,
+          progress: c.progress || 0,
+          deliverables: c.deliverables || [],
+          influencersCount: c.influencers_count || 0,
           brandId: c.brand_id
         })));
       }
@@ -78,21 +78,25 @@ const App: React.FC = () => {
       let profileData: Profile | null = null;
 
       if (isSupabaseConfigured()) {
-        const { data: existingProfile } = await supabase
+        const { data: existingProfile, error: fetchError } = await supabase
           .from('profiles')
           .select('*')
           .eq('email', authenticatedUser.email)
-          .single();
+          .maybeSingle();
 
-        if (existingProfile) {
+        if (existingProfile && !fetchError) {
           profileData = {
             id: existingProfile.id,
-            fullName: existingProfile.full_name,
+            fullName: existingProfile.full_name || 'User',
             email: existingProfile.email,
-            avatarUrl: existingProfile.avatar_url,
-            bio: existingProfile.bio,
-            role: existingProfile.role,
-            location: existingProfile.location
+            avatarUrl: existingProfile.avatar_url || `https://ui-avatars.com/api/?name=${existingProfile.full_name || 'User'}&background=7C3AED&color=fff`,
+            bio: existingProfile.bio || '',
+            role: (existingProfile.role as UserRole) || selectedRole,
+            location: existingProfile.location || 'Remote',
+            phone: existingProfile.phone,
+            website: existingProfile.website,
+            workVideos: existingProfile.work_videos,
+            socialLinks: existingProfile.social_links
           };
         } else {
           const newProfile = {
@@ -100,26 +104,31 @@ const App: React.FC = () => {
             full_name: authenticatedUser.email.split('@')[0],
             email: authenticatedUser.email,
             avatar_url: `https://ui-avatars.com/api/?name=${authenticatedUser.email.split('@')[0]}&background=7C3AED&color=fff`,
-            bio: `New ${selectedRole} on WeConnect. Ready to collaborate.`,
+            bio: `New ${selectedRole} on WeConnect.`,
             role: selectedRole,
             location: 'Remote'
           };
-          await supabase.from('profiles').insert([newProfile]);
-          profileData = { ...newProfile, fullName: newProfile.full_name, avatarUrl: newProfile.avatar_url };
           
-          if (selectedRole === 'influencer') {
-            await supabase.from('influencers').insert([{ 
-              profile_id: authenticatedUser.id,
-              niche: ['General'],
-              followers: '0',
-              engagement_rate: '0%',
-              ai_score: 50
-            }]);
-          } else {
-            await supabase.from('brands').insert([{ 
-              profile_id: authenticatedUser.id,
-              industry: 'Unspecified'
-            }]);
+          const { error: insertError } = await supabase.from('profiles').insert([newProfile]);
+          
+          if (!insertError) {
+            profileData = { 
+              ...newProfile, 
+              fullName: newProfile.full_name, 
+              avatarUrl: newProfile.avatar_url,
+              role: selectedRole
+            };
+            
+            if (selectedRole === 'influencer') {
+              await supabase.from('influencers').insert([{ 
+                profile_id: authenticatedUser.id,
+                handle: `@${authenticatedUser.email.split('@')[0]}`,
+                niche: ['General'],
+                followers: '0',
+                engagement_rate: '0%',
+                ai_score: 50
+              }]);
+            }
           }
         }
       }
@@ -132,6 +141,8 @@ const App: React.FC = () => {
         profileData: profileData || undefined
       });
       setView('app');
+    } catch (err) {
+      console.error("Login mapping error:", err);
     } finally {
       setLoading(false);
     }
@@ -139,7 +150,9 @@ const App: React.FC = () => {
 
   const handleLaunchCampaign = async () => {
     if (!user) return;
+    const campaignId = `camp_${Math.random().toString(36).substr(2, 9)}`;
     const campaignToAdd = {
+      id: campaignId,
       name: newCampaign.name,
       status: 'active',
       budget: newCampaign.budget,
@@ -152,8 +165,24 @@ const App: React.FC = () => {
     if (isSupabaseConfigured()) {
       const { data, error } = await supabase.from('campaigns').insert([campaignToAdd]).select().single();
       if (!error && data) {
-        setCampaigns(prev => [data, ...prev]);
+        setCampaigns(prev => [
+          {
+            id: String(data.id),
+            name: data.name,
+            status: data.status,
+            budget: data.budget,
+            progress: data.progress,
+            deliverables: data.deliverables,
+            influencersCount: data.influencers_count,
+            brandId: data.brand_id
+          }, 
+          ...prev
+        ]);
+      } else if (error) {
+        console.error("Campaign creation error:", error.message);
       }
+    } else {
+      setCampaigns(prev => [campaignToAdd as any, ...prev]);
     }
     
     setIsLaunchModalOpen(false);
@@ -171,16 +200,20 @@ const App: React.FC = () => {
       setForecastResult(forecast);
     } catch (error) {
       console.error("Forecasting failed:", error);
-      setForecastResult("Forecast engine is currently recalibrating. Please try again shortly.");
+      setForecastResult("Forecast engine is currently recalibrating.");
     } finally {
       setIsForecasting(false);
     }
   };
 
   const switchRole = async () => {
-    if (!user || !isSupabaseConfigured()) return;
+    if (!user) return;
     const newRole = user.currentRole === 'brand' ? 'influencer' : 'brand';
-    await supabase.from('profiles').update({ role: newRole }).eq('id', user.id);
+    
+    if (isSupabaseConfigured()) {
+      await supabase.from('profiles').update({ role: newRole }).eq('id', user.id);
+    }
+    
     setUser({ ...user, currentRole: newRole });
     setActiveTab('dashboard');
   };
@@ -191,7 +224,6 @@ const App: React.FC = () => {
   const renderContent = () => {
     const role = user?.currentRole || 'brand';
 
-    // Special view for Public Profile
     if (activeTab === 'public_profile' && selectedInfluencer) {
         return <PublicProfileView 
                   influencer={selectedInfluencer} 
@@ -249,10 +281,10 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               {[
-                { label: 'DB Latency', value: '42ms', trend: 'Optimal', color: 'text-green-600' },
+                { label: 'DB Status', value: 'Live', trend: 'Healthy', color: 'text-green-600' },
                 { label: 'Live Campaigns', value: campaigns.length.toString(), trend: 'Active', color: 'text-blue-600' },
-                { label: 'Stored Messages', value: '12', trend: 'Syncing', color: 'text-purple-600' },
-                { label: 'Cloud Storage', value: '98%', trend: 'Reliable', color: 'text-orange-600' }
+                { label: 'Stored Messages', value: 'SYNCED', trend: 'Encrypted', color: 'text-purple-600' },
+                { label: 'Cloud Sync', value: '100%', trend: 'Reliable', color: 'text-orange-600' }
               ].map(stat => (
                 <div key={stat.label} className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all">
                   <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-4">{stat.label}</p>
@@ -270,7 +302,7 @@ const App: React.FC = () => {
                      <button onClick={() => setActiveTab('campaigns')} className="text-purple-600 font-black text-[10px] uppercase tracking-widest hover:underline">Full Log</button>
                    </div>
                    <div className="space-y-4">
-                      {campaigns.slice(0, 3).map(c => (
+                      {campaigns.length > 0 ? campaigns.slice(0, 3).map(c => (
                         <div key={c.id} className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-lg transition-all border border-transparent hover:border-purple-100 group">
                           <div className="flex items-center space-x-4">
                             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-purple-600 shadow-sm group-hover:bg-purple-600 group-hover:text-white transition-all">
@@ -288,7 +320,9 @@ const App: React.FC = () => {
                              </div>
                           </div>
                         </div>
-                      ))}
+                      )) : (
+                        <p className="text-center py-10 text-gray-400 font-bold text-xs uppercase tracking-widest">No Active Campaigns</p>
+                      )}
                    </div>
                 </div>
                 <AIAnalyzer />

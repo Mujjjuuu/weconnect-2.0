@@ -33,7 +33,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate }) => {
     }
   });
   
-  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
@@ -60,7 +59,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate }) => {
 
         if (error) throw error;
         setSaveStatus('Identity Synced');
-      } catch (e) {
+      } catch (e: any) {
+        console.error("Profile Save Failed:", e.message);
         setSaveStatus('Sync Failed');
       }
     }
@@ -98,7 +98,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate }) => {
         ...prev,
         socialLinks: {
           ...prev.socialLinks,
-          [platform]: { ...prev.socialLinks?.[platform], stats: mockStats }
+          [platform]: { ...prev.socialLinks?.[platform as keyof typeof prev.socialLinks], stats: mockStats }
         }
       }));
       setIsSaving(false);

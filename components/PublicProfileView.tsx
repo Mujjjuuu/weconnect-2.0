@@ -29,7 +29,7 @@ const VideoGridItem = ({ videoUrl, avatarUrl }: { videoUrl: string, avatarUrl: s
     <div 
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
+      style={{ isolation: 'isolate', backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
       className="relative aspect-[9/16] bg-gray-900 rounded-[48px] overflow-hidden group shadow-xl hover:scale-[1.02] transition-all cursor-pointer will-change-transform"
     >
       <video 
@@ -40,7 +40,7 @@ const VideoGridItem = ({ videoUrl, avatarUrl }: { videoUrl: string, avatarUrl: s
         loop 
         playsInline
       />
-      {/* Profile Photo Overlay (Cleaned - no robot icon) */}
+      {/* Profile Photo Overlay */}
       <div className={`absolute top-6 right-6 z-20 transition-all duration-500 ${isHovered ? 'scale-110 opacity-100' : 'scale-90 opacity-60'}`}>
         <img src={avatarUrl} className="w-12 h-12 rounded-full border-2 border-white shadow-lg" alt="creator" />
       </div>
@@ -53,7 +53,11 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ influencer, onBac
   // Use mock videos if influencer has none for testing
   const displayVideos = (influencer.workVideos && influencer.workVideos.length > 0) 
     ? influencer.workVideos 
-    : ['https://cdn.pixabay.com/video/2021/04/12/70860-536967812_tiny.mp4', 'https://cdn.pixabay.com/video/2020/09/24/50849-463121516_tiny.mp4', 'https://cdn.pixabay.com/video/2021/08/17/85341-588804910_tiny.mp4'];
+    : [
+        'https://cdn.pixabay.com/video/2021/04/12/70860-536967812_tiny.mp4', 
+        'https://cdn.pixabay.com/video/2020/09/24/50849-463121516_tiny.mp4', 
+        'https://cdn.pixabay.com/video/2021/08/17/85341-588804910_tiny.mp4'
+      ];
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-6 animate-in fade-in slide-in-from-bottom-12 duration-700">

@@ -81,9 +81,7 @@ const InfluencerCard = ({ inf, onSelect, onSecureDeal }: { inf: Influencer, onSe
     if (isHovered && videoRef.current) {
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Auto-play was prevented by browser
-        });
+        playPromise.catch(() => {});
       }
     } else if (videoRef.current) {
       videoRef.current.pause();
@@ -95,8 +93,8 @@ const InfluencerCard = ({ inf, onSelect, onSecureDeal }: { inf: Influencer, onSe
     <div 
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
-      className="group relative overflow-hidden rounded-[56px] aspect-[9/16] bg-gray-900 shadow-3xl transition-all hover:scale-[1.03] hover:-translate-y-3 cursor-pointer will-change-transform"
+      style={{ isolation: 'isolate', backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
+      className="group relative overflow-hidden rounded-[56px] aspect-[9/16] bg-gray-900 shadow-3xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-3 cursor-pointer will-change-transform"
     >
       {/* Background Media */}
       <img 
@@ -118,7 +116,7 @@ const InfluencerCard = ({ inf, onSelect, onSecureDeal }: { inf: Influencer, onSe
         />
       )}
 
-      {/* Profile Photo Overlay (only visible/hovered) - Cleaned of Robot Icon */}
+      {/* Profile Photo Overlay (only visible when hovered) */}
       <div className={`absolute top-8 right-8 z-30 transition-all duration-500 pointer-events-none ${isHovered ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90'}`}>
         <img src={inf.avatar} className="w-16 h-16 rounded-full border-4 border-white shadow-2xl" alt="mini-profile" />
       </div>
@@ -166,15 +164,12 @@ const InfluencerCard = ({ inf, onSelect, onSecureDeal }: { inf: Influencer, onSe
 
 const DiscoverFeed: React.FC<{ onSelectInfluencer: (inf: Influencer) => void, onSecureDeal: () => void }> = ({ onSelectInfluencer, onSecureDeal }) => {
   const [influencers, setInfluencers] = useState<Influencer[]>(MOCK_INFLUENCERS);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
 
   useEffect(() => {
     const fetchCreators = async () => {
-      setLoading(true);
       if (!isSupabaseConfigured()) {
         setInfluencers(MOCK_INFLUENCERS);
-        setLoading(false);
         return;
       }
       try {
@@ -197,13 +192,9 @@ const DiscoverFeed: React.FC<{ onSelectInfluencer: (inf: Influencer) => void, on
             packages: []
           }));
           setInfluencers(mapped);
-        } else {
-          setInfluencers(MOCK_INFLUENCERS);
         }
       } catch (e) {
         setInfluencers(MOCK_INFLUENCERS);
-      } finally {
-        setLoading(false);
       }
     };
     fetchCreators();
