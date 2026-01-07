@@ -1,5 +1,6 @@
 
-import { useState, useEffect, useRef } from 'react';
+// Import React to fix namespace error and allow use of React.FC
+import React, { useState, useEffect, useRef } from 'react';
 import { Influencer } from '../types';
 import { Icons } from '../constants';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
@@ -73,7 +74,8 @@ const MOCK_INFLUENCERS: Influencer[] = [
   }
 ];
 
-const InfluencerCard = ({ inf, onSelect, onSecureDeal }: { inf: Influencer, onSelect: () => void, onSecureDeal: () => void }) => {
+// Use React.FC to allow the 'key' prop when using this component in a list
+const InfluencerCard: React.FC<{ inf: Influencer; onSelect: () => void; onSecureDeal: () => void }> = ({ inf, onSelect, onSecureDeal }) => {
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -162,6 +164,7 @@ const InfluencerCard = ({ inf, onSelect, onSecureDeal }: { inf: Influencer, onSe
   );
 };
 
+// Use React.FC to fix namespace errors when using React.FC elsewhere in the file
 const DiscoverFeed: React.FC<{ onSelectInfluencer: (inf: Influencer) => void, onSecureDeal: () => void }> = ({ onSelectInfluencer, onSecureDeal }) => {
   const [influencers, setInfluencers] = useState<Influencer[]>(MOCK_INFLUENCERS);
   const [filter, setFilter] = useState('All');

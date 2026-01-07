@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Icons } from '../constants';
+import { Icons, BrandLogo } from '../constants';
 import { UserRole } from '../types';
 
 interface LoginProps {
@@ -8,6 +8,14 @@ interface LoginProps {
   onCancel: () => void;
   initialMode?: 'login' | 'signup';
 }
+
+// Helper to generate a valid UUID format to satisfy Supabase constraints
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 const Login: React.FC<LoginProps> = ({ onLoginComplete, onCancel, initialMode = 'login' }) => {
   const [mode, setMode] = useState<'login' | 'signup' | 'role-select'>(initialMode);
@@ -23,7 +31,7 @@ const Login: React.FC<LoginProps> = ({ onLoginComplete, onCancel, initialMode = 
     setTimeout(() => {
       const mockUser = { 
         email: email || `user_${Math.floor(Math.random() * 1000)}@gmail.com`, 
-        id: 'user-' + Math.random().toString(36).substr(2, 9) 
+        id: generateUUID() 
       };
       setTempUser(mockUser);
       if (mode === 'signup') {
@@ -86,9 +94,7 @@ const Login: React.FC<LoginProps> = ({ onLoginComplete, onCancel, initialMode = 
         </button>
 
         <div className="flex justify-center mb-10">
-          <div className="w-20 h-20 bg-purple-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-purple-200">
-            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          </div>
+          <BrandLogo size="xl" className="hover:scale-105 transition-transform" />
         </div>
 
         <h1 className="text-4xl font-black text-gray-900 mb-4 tracking-tight">

@@ -1,26 +1,29 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile, Profile, SocialStats } from '../types';
 import { Icons } from '../constants';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 
 interface ProfileViewProps {
   user: UserProfile;
+  activeEntityId: string;
   onUpdate: (updatedProfile: Profile) => void;
 }
 
 type TabType = 'general' | 'professional' | 'social' | 'showcase' | 'security';
 
-const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ user, activeEntityId, onUpdate }) => {
+  const activeProfile = user.entities.find(e => e.id === activeEntityId);
+  
   const [activeTab, setActiveTab] = useState<TabType>('general');
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<Profile>(user.profileData || {
+  const [formData, setFormData] = useState<Profile>(activeProfile || {
     id: user.id,
     fullName: user.fullName,
     email: user.email,
     avatarUrl: `https://ui-avatars.com/api/?name=${user.fullName}&background=7C3AED&color=fff`,
     bio: '',
-    role: user.currentRole,
+    role: 'brand',
     location: '',
     gender: 'Prefer not to say',
     languages: ['English'],
@@ -32,9 +35,26 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate }) => {
       youtube: { handle: '' } 
     }
   });
+
+  // Re-sync if active profile changes
+  useEffect(() => {
+    if (activeProfile) {
+      setFormData(activeProfile);
+    }
+  }, [activeProfile]);
   
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  const tabs: {id: TabType, label: string, icon: any}[] = [
+    { id: 'general', label: 'Identity Core', icon: Icons.Dashboard },
+    { id: 'professional', label: 'Market Logic', icon: Icons.Campaigns },
+    { id: 'showcase', label: 'Work Showcase', icon: Icons.Analytics },
+    { id: 'social', label: 'Social Sync', icon: Icons.Discover },
+    { id: 'security', label: 'Safety Hub', icon: Icons.Settings }
+  ];
+
+  const activeTabIndex = tabs.findIndex(t => t.id === activeTab) + 1;
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -42,6 +62,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate }) => {
     
     if (isSupabaseConfigured()) {
       try {
+        // Correctly update by the specific entity profile ID
         const { error } = await supabase.from('profiles').update({
           full_name: formData.fullName,
           bio: formData.bio,
@@ -55,7 +76,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate }) => {
           address: formData.address,
           work_videos: formData.workVideos,
           social_links: formData.socialLinks
-        }).eq('id', user.id);
+        }).eq('id', formData.id);
 
         if (error) throw error;
         setSaveStatus('Identity Synced');
@@ -295,24 +316,29 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdate }) => {
         
         {/* Navigation Sidebar */}
         <div className="lg:w-1/4 bg-gray-50/50 p-10 border-r border-gray-100 flex flex-col">
-          <div className="relative mb-14 group self-center">
+          <div className="relative mb-8 group self-center">
              <img src={formData.avatarUrl} className="w-48 h-48 rounded-[64px] object-cover shadow-3xl group-hover:scale-105 transition-transform duration-500 ring-8 ring-white" alt="Profile" />
              <div className="absolute -bottom-2 -right-2 w-14 h-14 bg-purple-600 text-white rounded-2xl flex items-center justify-center shadow-2xl border-4 border-white">
                 <Icons.Robot />
              </div>
           </div>
           
+          <div className="mb-10 text-center">
+             <div className="inline-flex items-center space-x-2 px-4 py-1.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-black uppercase tracking-widest">
+                <span>Step {activeTabIndex} of {tabs.length}</span>
+             </div>
+             <div className="mt-4 flex justify-center space-x-1">
+                {tabs.map((_, i) => (
+                   <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i + 1 <= activeTabIndex ? 'w-6 bg-purple-600' : 'w-2 bg-gray-200'}`}></div>
+                ))}
+             </div>
+          </div>
+          
           <div className="space-y-3 flex-1">
-             {[
-               { id: 'general', label: 'Identity Core', icon: Icons.Dashboard },
-               { id: 'professional', label: 'Market Logic', icon: Icons.Campaigns },
-               { id: 'showcase', label: 'Work Showcase', icon: Icons.Analytics },
-               { id: 'social', label: 'Social Sync', icon: Icons.Discover },
-               { id: 'security', label: 'Safety Hub', icon: Icons.Settings }
-             ].map(tab => (
+             {tabs.map(tab => (
                <button
                  key={tab.id}
-                 onClick={() => { setActiveTab(tab.id as TabType); setIsEditing(false); }}
+                 onClick={() => { setActiveTab(tab.id); setIsEditing(false); }}
                  className={`w-full flex items-center space-x-4 px-8 py-5 rounded-[24px] transition-all font-black text-[11px] uppercase tracking-widest ${
                    activeTab === tab.id 
                     ? 'bg-white text-purple-600 shadow-xl border border-purple-50 translate-x-2' 

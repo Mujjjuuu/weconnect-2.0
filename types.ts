@@ -24,7 +24,7 @@ export interface Profile {
   languages?: string[];
   categories?: string[];
   address?: string;
-  workVideos?: string[]; // Array of video URLs for portfolio
+  workVideos?: string[]; 
   socialLinks?: {
     instagram?: { handle: string; stats?: SocialStats };
     tiktok?: { handle: string; stats?: SocialStats };
@@ -37,21 +37,17 @@ export interface Profile {
   };
 }
 
-export interface BrandProfile extends Profile {
-  industry: string;
-  companySize?: string;
-  brandValues?: string[];
+export interface UserProfile {
+  id: string;
+  email: string;
+  fullName: string;
+  activeEntityId: string;
+  entities: Profile[];
 }
 
-export interface InfluencerProfile extends Profile {
-  handle: string;
-  niche: string[];
-  followers: string;
-  engagementRate: string;
-  aiScore: number;
-  portfolio: string[];
-}
-
+/**
+ * Influencer interface for marketplace and discovery
+ */
 export interface Influencer {
   id: string;
   name: string;
@@ -63,21 +59,14 @@ export interface Influencer {
   avatar: string;
   bio: string;
   location: string;
-  portfolio: string[];
-  workVideos?: string[]; // Added for marketplace preview
+  workVideos?: string[];
+  portfolio: any[];
   packages: any[];
   socialStats?: {
     instagram?: SocialStats;
+    tiktok?: SocialStats;
     youtube?: SocialStats;
   };
-}
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  fullName: string;
-  currentRole: UserRole;
-  profileData?: Profile;
 }
 
 export interface Campaign {

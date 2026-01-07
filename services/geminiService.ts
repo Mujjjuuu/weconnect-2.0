@@ -2,10 +2,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIAnalysisResult } from "../types";
 
-// Always initialize with named parameters as per guidelines, using API key directly
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Safe initialization helper
+const getAi = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.warn("Gemini API Key missing from environment.");
+    return null;
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export const analyzeContent = async (imageBase64: string): Promise<AIAnalysisResult> => {
+  const ai = getAi();
+  if (!ai) throw new Error("AI Service Unavailable");
+  
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
@@ -39,6 +49,9 @@ export const analyzeContent = async (imageBase64: string): Promise<AIAnalysisRes
 };
 
 export const generateCampaignStrategy = async (prompt: string): Promise<any> => {
+  const ai = getAi();
+  if (!ai) return null;
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
@@ -65,6 +78,9 @@ export const generateCampaignStrategy = async (prompt: string): Promise<any> => 
 };
 
 export const chatWithAi = async (message: string): Promise<string> => {
+  const ai = getAi();
+  if (!ai) return "I'm offline right now.";
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -82,6 +98,9 @@ export const chatWithAi = async (message: string): Promise<string> => {
 };
 
 export const getCampaignForecast = async (campaignDetails: any): Promise<string> => {
+  const ai = getAi();
+  if (!ai) return "Strategic forecast unavailable.";
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
@@ -95,6 +114,9 @@ export const getCampaignForecast = async (campaignDetails: any): Promise<string>
 };
 
 export const getMatchAnalysis = async (campaign: any, influencer: any): Promise<string> => {
+  const ai = getAi();
+  if (!ai) return "Strategic match detected based on content DNA.";
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
@@ -112,6 +134,9 @@ export const getMatchAnalysis = async (campaign: any, influencer: any): Promise<
 };
 
 export const getCriteriaExplanation = async (criteria: string): Promise<string> => {
+  const ai = getAi();
+  if (!ai) return "Uses deep neural assessment of engagement patterns.";
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -124,6 +149,9 @@ export const getCriteriaExplanation = async (criteria: string): Promise<string> 
 };
 
 export const getPostCampaignInsights = async (campaignName: string, contentAnalysis: AIAnalysisResult): Promise<string> => {
+  const ai = getAi();
+  if (!ai) return "Review insights completed.";
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",

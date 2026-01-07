@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Icons } from '../constants';
+import { Icons, BrandLogo } from '../constants';
 
 interface LandingPageProps {
   onEnterLogin: () => void;
@@ -101,10 +101,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterLogin, onEnterExplore 
           <div className="lg:grid lg:grid-cols-12 lg:gap-20 items-center">
             
             <div className="lg:col-span-7 space-y-10">
-              <div className="animate-reveal opacity-0 inline-flex items-center space-x-3 px-5 py-2.5 bg-white/80 backdrop-blur-md border border-gray-100 shadow-xl shadow-purple-50 rounded-full text-[11px] font-black uppercase tracking-[0.2em] text-purple-600">
-                <div className="p-1.5 bg-purple-600 rounded-lg text-white">
-                  <Icons.Robot />
-                </div>
+              <div className="animate-reveal opacity-0 inline-flex items-center space-x-4 px-5 py-2.5 bg-white/80 backdrop-blur-md border border-gray-100 shadow-xl shadow-purple-50 rounded-full text-[11px] font-black uppercase tracking-[0.2em] text-purple-600">
+                <BrandLogo size="sm" className="drop-shadow-none" />
                 <span>Neural Ecosystem v4.0</span>
               </div>
               
@@ -257,10 +255,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterLogin, onEnterExplore 
       <footer className="bg-gray-900 pt-32 pb-20 text-white relative z-10">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 grid grid-cols-1 md:grid-cols-4 gap-24">
           <div className="col-span-1 md:col-span-2 space-y-8">
-            <div className="flex items-center space-x-4">
-              <div className="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center shadow-2xl">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              </div>
+            <div className="flex items-center space-x-6">
+              <BrandLogo size="lg" />
               <span className="text-4xl font-black tracking-tighter">WeConnect</span>
             </div>
             <p className="text-gray-400 font-medium text-lg leading-relaxed max-w-md">Making influencer marketing simple and smart for everyone.</p>

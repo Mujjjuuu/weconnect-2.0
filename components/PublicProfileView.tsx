@@ -9,7 +9,8 @@ interface PublicProfileViewProps {
   onSecureDeal: () => void;
 }
 
-const VideoGridItem = ({ videoUrl, avatarUrl }: { videoUrl: string, avatarUrl: string }) => {
+// Use React.FC to allow the 'key' prop when using this component in a list
+const VideoGridItem: React.FC<{ videoUrl: string; avatarUrl: string }> = ({ videoUrl, avatarUrl }) => {
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -149,7 +150,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ influencer, onBac
                      </div>
                      <div>
                         <p className="font-black text-gray-900 leading-none">Instagram</p>
-                        <p className="text-xs text-purple-600 font-black uppercase mt-1">Verified</p>
+                        <p className="text-purple-600 font-black uppercase mt-1 text-[10px]">Verified</p>
                      </div>
                   </div>
                   <p className="text-xl font-black text-gray-900 tracking-tighter">{influencer.followers}</p>
@@ -161,7 +162,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ influencer, onBac
                      </div>
                      <div>
                         <p className="font-black text-gray-900 leading-none">YouTube</p>
-                        <p className="text-xs text-red-600 font-black uppercase mt-1">Verified</p>
+                        <p className="text-red-600 font-black uppercase mt-1 text-[10px]">Verified</p>
                      </div>
                   </div>
                   <p className="text-xl font-black text-gray-900 tracking-tighter">89K</p>
