@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { UserProfile, Profile, SocialStats } from '../types';
 import { Icons } from '../constants';
@@ -171,18 +170,58 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, activeEntityId, onUpdat
         );
       case 'showcase':
         return (
-          <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
-            <div className="flex justify-between items-center mb-8">
-               <h3 className="text-2xl font-black text-gray-900 tracking-tight">Portfolio Gallery</h3>
-               <button onClick={handleAddVideo} className="bg-purple-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 active:scale-95 transition-all">
-                 Add Showcase Video
+          <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
+            {/* NEW: Educational / Benefits Section */}
+            <div className="bg-gradient-to-br from-gray-900 to-indigo-950 rounded-[48px] p-10 text-white relative overflow-hidden shadow-2xl">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+              <div className="relative z-10 max-w-2xl">
+                <h3 className="text-3xl font-black mb-6 tracking-tight">Why Video Portfolio Matters</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                  <div className="space-y-2">
+                    <p className="text-purple-400 font-black text-[10px] uppercase tracking-[0.2em]">Visual Proof</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">Brands hire what they can see. High-definition reels prove your production quality and on-camera energy instantly.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-purple-400 font-black text-[10px] uppercase tracking-[0.2em]">AI DNA Score</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">Our AI analyzes your videos to generate a 'Match Score' for brands, placing you at the top of their discovery feeds.</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">The 3-Step Process</p>
+                  <div className="flex flex-wrap gap-4">
+                    <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl flex items-center space-x-3">
+                      <span className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-black">1</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider">Host MP4 Link</span>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl flex items-center space-x-3">
+                      <span className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider">Paste in Portal</span>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl flex items-center space-x-3">
+                      <span className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-black">3</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider">Global Discover</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center">
+               <div>
+                 <h3 className="text-2xl font-black text-gray-900 tracking-tight">Portfolio Gallery</h3>
+                 <p className="text-gray-500 text-sm font-medium mt-1">Manage your high-definition content samples.</p>
+               </div>
+               <button onClick={handleAddVideo} className="bg-purple-600 text-white px-8 py-4 rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-purple-200 hover:scale-105 active:scale-95 transition-all flex items-center space-x-3">
+                 <Icons.Plus />
+                 <span>Add Showcase Video</span>
                </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-12">
               {(formData.workVideos && formData.workVideos.length > 0) ? (
                 formData.workVideos.map((vid, idx) => (
-                  <div key={idx} className="relative aspect-[9/16] bg-gray-900 rounded-[40px] overflow-hidden shadow-2xl group">
+                  <div key={idx} className="relative aspect-[9/16] bg-gray-900 rounded-[40px] overflow-hidden shadow-2xl group transition-all hover:-translate-y-2">
                     <video 
                       src={vid} 
                       className="w-full h-full object-cover" 
@@ -191,8 +230,18 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, activeEntityId, onUpdat
                       muted
                       loop
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                       <button onClick={() => setFormData(prev => ({ ...prev, workVideos: prev.workVideos?.filter((_, i) => i !== idx)}))} className="bg-red-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest">Remove</button>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-8">
+                       <p className="text-white font-black text-xs mb-4">Sample Reel #{idx + 1}</p>
+                       <button 
+                        onClick={() => {
+                          if (confirm("Permanently remove this showcase piece?")) {
+                            setFormData(prev => ({ ...prev, workVideos: prev.workVideos?.filter((_, i) => i !== idx)}));
+                          }
+                        }} 
+                        className="w-full bg-red-500/20 backdrop-blur-md border border-red-500/50 text-red-500 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                       >
+                         Remove Piece
+                       </button>
                     </div>
                   </div>
                 ))

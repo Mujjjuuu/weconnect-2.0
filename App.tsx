@@ -51,14 +51,16 @@ const App: React.FC = () => {
     industry: 'Technology' 
   });
 
+  // activeProfile is derived from user state.
   const activeProfile = useMemo(() => {
     if (!user || !user.entities || user.entities.length === 0) return null;
     return user.entities.find(e => e.id === user.activeEntityId) || user.entities[0];
   }, [user]);
 
   useEffect(() => {
-    // Attempt data seeding silently
-    seedInitialData().catch(() => console.warn("Seed skipped."));
+    if (isSupabaseConfigured()) {
+      seedInitialData().catch(() => {});
+    }
 
     const handleClickOutside = (event: MouseEvent) => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
@@ -73,20 +75,25 @@ const App: React.FC = () => {
     if (view === 'app' && user && activeProfile) {
       fetchUserCampaigns();
     }
-  }, [view, user, activeProfile]);
+  }, [view, activeProfile?.id]); // Depend specifically on active ID for efficiency
 
   const fetchUserCampaigns = async () => {
-    if (!user || !activeProfile) return;
+    if (!user || !activeProfile || !isSupabaseConfigured()) {
+      console.log("App: Local data mode active (Supabase not configured)");
+      return;
+    }
+    
     setLoading(true);
     try {
-      // Using the safe supabase proxy exported from services/supabase.ts
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
         .or(`brand_id.eq.${activeProfile.id},influencers_ids.cs.{${activeProfile.id}}`)
         .order('created_at', { ascending: false });
       
-      if (!error && data) {
+      if (error) throw error;
+      
+      if (data) {
         setCampaigns(data.map((c: any) => ({
           id: String(c.id),
           name: c.name,
@@ -98,8 +105,8 @@ const App: React.FC = () => {
           brandId: c.brand_id
         })));
       }
-    } catch (e) {
-      console.error("Campaign fetch bypassed (likely using local data mode).");
+    } catch (e: any) {
+      console.warn(`App: Campaign sync interrupted: ${e.message}`);
     } finally {
       setLoading(false);
     }
@@ -154,7 +161,14 @@ const App: React.FC = () => {
   };
 
   const switchActiveEntity = (id: string) => {
-    setUser(prev => prev ? ({ ...prev, activeEntityId: id }) : null);
+    // Force a fresh object to ensure useMemo and effects trigger correctly.
+    setUser(prev => {
+      if (!prev) return null;
+      return { 
+        ...prev, 
+        activeEntityId: id 
+      };
+    });
     setIsEntityMenuOpen(false);
     setIsProfileDropdownOpen(false);
     setActiveTab('dashboard');
@@ -285,8 +299,8 @@ const App: React.FC = () => {
             <div className="bg-gradient-to-br from-purple-800 to-indigo-900 rounded-[64px] p-16 text-white relative overflow-hidden shadow-3xl">
               <div className="relative z-10 max-w-3xl">
                 <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 mb-8">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>WeConnect Live Hub</span>
+                  <div className={`w-2 h-2 ${isSupabaseConfigured() ? 'bg-green-400' : 'bg-amber-400'} rounded-full animate-pulse`}></div>
+                  <span>WeConnect Live Hub {isSupabaseConfigured() ? '(Cloud Connected)' : '(Local Mode)'}</span>
                 </div>
                 <h2 className="text-5xl font-black mb-6 tracking-tight">Your Business Hub.</h2>
                 <p className="text-purple-100 text-lg mb-10 font-medium opacity-90 leading-relaxed max-w-xl">
@@ -306,7 +320,7 @@ const App: React.FC = () => {
                 { label: 'Role', value: role.toUpperCase(), trend: 'Identity Verified', color: 'text-purple-600' },
                 { label: 'Live Campaigns', value: campaigns.length.toString(), trend: 'Active', color: 'text-blue-600' },
                 { label: 'Entity Level', value: 'ENTERPRISE', trend: 'Neural Pro', color: 'text-green-600' },
-                { label: 'Storage', value: 'CLOUD', trend: 'Synced', color: 'text-orange-600' }
+                { label: 'Storage', value: isSupabaseConfigured() ? 'CLOUD' : 'LOCAL', trend: 'Synced', color: 'text-orange-600' }
               ].map(stat => (
                 <div key={stat.label} className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all">
                   <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-4">{stat.label}</p>
