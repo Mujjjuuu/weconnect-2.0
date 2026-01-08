@@ -1,53 +1,50 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const PROJECT_ID = 'viwoqqthqypwlruzamfz';
 const supabaseUrl = `https://${PROJECT_ID}.supabase.co`;
 
 /**
- * Returns the current Supabase Anon Key from the environment.
+ * Validates and retrieves the Supabase key from the environment.
  */
 const getSupabaseKey = () => {
   const key = process.env?.SUPABASE_ANON_KEY;
-  if (key && key.length > 10) return key;
+  if (key && key.trim().length > 20 && !key.includes('placeholder') && key !== '') {
+    return key.trim();
+  }
   return null;
 };
 
-/**
- * Direct Supabase client instance.
- * If the key is missing, it will use a placeholder to prevent initialization crash,
- * but operations will fail gracefully.
- */
-const key = getSupabaseKey();
-export const supabase = createClient(supabaseUrl, key || 'placeholder-key');
+const activeKey = getSupabaseKey();
 
 /**
- * Check if the application has a valid Supabase configuration.
+ * Shared Supabase instance.
  */
-export const isSupabaseConfigured = () => {
-  const currentKey = getSupabaseKey();
-  return !!currentKey && currentKey !== 'placeholder-key';
+export const supabase: SupabaseClient | null = activeKey 
+  ? createClient(supabaseUrl, activeKey) 
+  : null;
+
+export const isSupabaseConfigured = (): boolean => {
+  return supabase !== null;
 };
 
 /**
- * Seeds initial data into the database if it is empty.
+ * Validates the connection with a lightweight ping.
+ * Returns true if the key is not only present but functional.
  */
+export const testConnection = async (): Promise<boolean> => {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('profiles').select('id').limit(1);
+    return !error;
+  } catch {
+    return false;
+  }
+};
+
 export const seedInitialData = async () => {
-  if (!isSupabaseConfigured()) {
-    console.warn("Supabase: Key missing. Seeding skipped.");
+  if (!supabase) {
+    console.info("WeConnect: Running in Local Demo Mode.");
     return;
   }
-  
-  try {
-    const { data, error } = await supabase.from('profiles').select('id').limit(1);
-    if (error) {
-       console.warn("Supabase connection established, but tables may not be ready.");
-       return;
-    }
-    
-    if (!data || data.length === 0) {
-      console.log("WeConnect: Database connected and ready.");
-    }
-  } catch (e) {
-    console.warn("Supabase connection check failed.");
-  }
+  console.log("WeConnect: Cloud Handshake Initialized...");
 };

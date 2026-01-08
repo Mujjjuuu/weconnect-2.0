@@ -4,17 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WeConnect | AI Influencer Marketing</title>
-    <!-- Robust process shim: Merge existing env vars to preserve platform-injected keys -->
+    <!-- Robust process shim: Ensures critical variables are initialized before any module loads -->
     <script>
       (function() {
         window.process = window.process || { env: {} };
-        const existingEnv = window.process.env || {};
-        window.process.env = {
-          ...existingEnv,
-          NODE_ENV: existingEnv.NODE_ENV || 'production',
-          API_KEY: existingEnv.API_KEY || '',
-          SUPABASE_ANON_KEY: existingEnv.SUPABASE_ANON_KEY || ''
-        };
+        const env = window.process.env;
+        // Defaults for essential operations
+        env.NODE_ENV = env.NODE_ENV || 'production';
+        env.API_KEY = env.API_KEY || '';
+        env.SUPABASE_ANON_KEY = env.SUPABASE_ANON_KEY || '';
         window.global = window;
       })();
     </script>
@@ -30,7 +28,6 @@
       #root {
         min-height: 100vh;
       }
-      /* Initial Loading Spinner */
       #root:empty::after {
         content: "";
         position: fixed;
@@ -45,7 +42,10 @@
         animation: spin 0.6s linear infinite;
       }
       @keyframes spin { to { transform: rotate(360deg); } }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
+    <!-- Simplified Import Map for Production Resilience -->
     <script type="importmap">
 {
   "imports": {
@@ -62,5 +62,7 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Entry point: index.tsx handles the actual mounting of the React app -->
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

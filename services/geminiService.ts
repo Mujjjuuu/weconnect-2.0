@@ -1,15 +1,20 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIAnalysisResult } from "../types";
 
 // Safe initialization helper
 const getAi = () => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    console.warn("Gemini API Key missing from environment.");
+  if (!apiKey || apiKey === '' || apiKey.includes('placeholder')) {
     return null;
   }
   return new GoogleGenAI({ apiKey });
+};
+
+/**
+ * Returns true if a valid Gemini API key is configured.
+ */
+export const isAiReady = (): boolean => {
+  return !!process.env.API_KEY && process.env.API_KEY !== '' && !process.env.API_KEY.includes('placeholder');
 };
 
 export const analyzeContent = async (imageBase64: string): Promise<AIAnalysisResult> => {

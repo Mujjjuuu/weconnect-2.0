@@ -1,7 +1,8 @@
-
 import React, { useState } from 'react';
 import { Icons } from '../constants';
 import { UserRole } from '../types';
+import { isSupabaseConfigured } from '../services/supabase';
+import { isAiReady } from '../services/geminiService';
 
 interface SidebarProps {
   role: UserRole;
@@ -12,6 +13,9 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isCollapsed, setIsCollapsed }) => {
+  const isCloudActive = isSupabaseConfigured();
+  const isAiActive = isAiReady();
+
   const menuItems = [
     { id: 'dashboard', label: 'Home', icon: Icons.Dashboard },
     { id: 'campaigns', label: 'Campaigns', icon: Icons.Campaigns },
@@ -62,15 +66,19 @@ const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isColl
       
       {!isCollapsed && (
         <div className="p-8 border-t border-gray-50 transition-all duration-300">
-          <div className="p-6 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-[32px] text-white shadow-2xl shadow-purple-100 relative overflow-hidden group">
+          <div className={`p-6 rounded-[32px] text-white shadow-2xl relative overflow-hidden group transition-all duration-500 ${isCloudActive ? 'bg-gradient-to-br from-green-600 to-teal-600 shadow-green-100' : 'bg-gradient-to-br from-purple-600 to-indigo-600 shadow-purple-100'}`}>
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-150 transition-transform">
-               <Icons.Robot />
+               {isAiActive ? <Icons.Robot /> : <Icons.Settings />}
             </div>
             <p className="text-[9px] font-black opacity-60 uppercase tracking-widest mb-1">Status</p>
-            <p className="text-sm font-black tracking-tight">Cloud Synced</p>
-            <button className="mt-4 w-full bg-white/20 hover:bg-white/30 text-white text-[9px] font-black uppercase tracking-[0.2em] py-3 rounded-xl transition-all">
-              Secure Mode
-            </button>
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full animate-pulse ${isCloudActive ? 'bg-green-300' : 'bg-white'}`}></div>
+              <p className="text-sm font-black tracking-tight">{isCloudActive ? 'Cloud Online' : 'Local Demo'}</p>
+            </div>
+            <div className="mt-3 pt-3 border-t border-white/10">
+              <p className="text-[8px] font-black uppercase tracking-widest opacity-60">AI Core</p>
+              <p className="text-[10px] font-bold">{isAiActive ? 'Gemini 3.0 Live' : 'Simulated Logic'}</p>
+            </div>
           </div>
         </div>
       )}

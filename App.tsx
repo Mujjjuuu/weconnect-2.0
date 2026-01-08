@@ -13,8 +13,8 @@ import WalletView from './components/WalletView';
 import MessagesView from './components/MessagesView';
 import { UserRole, Campaign, UserProfile, Profile, Influencer } from './types';
 import { Icons, BrandLogo } from './constants';
-import { getCampaignForecast } from './services/geminiService';
-import { supabase, seedInitialData, isSupabaseConfigured } from './services/supabase';
+import { getCampaignForecast, isAiReady } from './services/geminiService';
+import { supabase, seedInitialData, isSupabaseConfigured, testConnection } from './services/supabase';
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -34,6 +34,8 @@ const App: React.FC = () => {
   const [isEntityMenuOpen, setIsEntityMenuOpen] = useState(false);
   const [isCreateEntityOpen, setIsCreateEntityOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isCloudVerified, setIsCloudVerified] = useState(false);
+  const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   
   const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
   const [newCampaign, setNewCampaign] = useState({ name: '', platform: 'TikTok', budget: '' });
@@ -51,16 +53,28 @@ const App: React.FC = () => {
     industry: 'Technology' 
   });
 
-  // activeProfile is derived from user state.
   const activeProfile = useMemo(() => {
     if (!user || !user.entities || user.entities.length === 0) return null;
     return user.entities.find(e => e.id === user.activeEntityId) || user.entities[0];
-  }, [user]);
+  }, [user?.activeEntityId, user?.entities]);
+
+  const initCloud = async () => {
+    setLoading(true);
+    await seedInitialData();
+    const verified = await testConnection();
+    setIsCloudVerified(verified);
+    if (verified) {
+      setShowSyncSuccess(true);
+      setTimeout(() => setShowSyncSuccess(false), 5000);
+      if (view === 'app' && user && activeProfile) {
+        fetchUserCampaigns();
+      }
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (isSupabaseConfigured()) {
-      seedInitialData().catch(() => {});
-    }
+    initCloud().catch(() => {});
 
     const handleClickOutside = (event: MouseEvent) => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
@@ -69,17 +83,11 @@ const App: React.FC = () => {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    if (view === 'app' && user && activeProfile) {
-      fetchUserCampaigns();
-    }
-  }, [view, activeProfile?.id]); // Depend specifically on active ID for efficiency
+  }, [view, user?.id]);
 
   const fetchUserCampaigns = async () => {
-    if (!user || !activeProfile || !isSupabaseConfigured()) {
-      console.log("App: Local data mode active (Supabase not configured)");
+    if (!user || !activeProfile || !supabase || !isCloudVerified) {
+      setCampaigns([]);
       return;
     }
     
@@ -91,9 +99,7 @@ const App: React.FC = () => {
         .or(`brand_id.eq.${activeProfile.id},influencers_ids.cs.{${activeProfile.id}}`)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      
-      if (data) {
+      if (!error && data) {
         setCampaigns(data.map((c: any) => ({
           id: String(c.id),
           name: c.name,
@@ -105,8 +111,8 @@ const App: React.FC = () => {
           brandId: c.brand_id
         })));
       }
-    } catch (e: any) {
-      console.warn(`App: Campaign sync interrupted: ${e.message}`);
+    } catch (e) {
+      console.warn("App: Cloud fetch failed, switching to local state.");
     } finally {
       setLoading(false);
     }
@@ -161,7 +167,6 @@ const App: React.FC = () => {
   };
 
   const switchActiveEntity = (id: string) => {
-    // Force a fresh object to ensure useMemo and effects trigger correctly.
     setUser(prev => {
       if (!prev) return null;
       return { 
@@ -243,6 +248,38 @@ const App: React.FC = () => {
       case 'dashboard':
         return (
           <div className="space-y-12 max-w-6xl mx-auto py-12 animate-in fade-in duration-1000">
+             {showSyncSuccess && (
+                <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] bg-green-600 text-white px-8 py-4 rounded-[32px] font-black text-xs uppercase tracking-widest shadow-2xl animate-in slide-in-from-top-12 duration-500">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+                    <span>Neural Cloud Handshake Complete</span>
+                  </div>
+                </div>
+             )}
+
+             {!isCloudVerified && (
+               <div className="bg-amber-50 border border-amber-200 rounded-[32px] p-6 flex items-center justify-between mb-8 shadow-sm">
+                 <div className="flex items-center space-x-4">
+                   <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
+                     <Icons.Settings />
+                   </div>
+                   <div>
+                     <p className="text-amber-900 font-black text-xs uppercase tracking-widest">Developer Note: Demo Mode</p>
+                     <p className="text-amber-700 text-[11px] font-medium">Add <code className="bg-amber-200/50 px-1 rounded">SUPABASE_ANON_KEY</code> and <code className="bg-amber-200/50 px-1 rounded">API_KEY</code> to GitHub Secrets to go live.</p>
+                   </div>
+                 </div>
+                 <div className="flex space-x-4">
+                   <button 
+                    onClick={initCloud}
+                    className="text-[10px] bg-amber-200/50 hover:bg-amber-200 px-4 py-2 rounded-xl font-black uppercase text-amber-900 tracking-widest transition-all"
+                   >
+                     Retry Sync
+                   </button>
+                   <a href="https://github.com/features/actions" target="_blank" className="text-[10px] font-black uppercase text-amber-900 underline tracking-widest flex items-center">Setup Guide</a>
+                 </div>
+               </div>
+             )}
+
              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <h1 className="text-4xl font-black text-gray-900 tracking-tight">Welcome, {activeProfile.fullName}.</h1>
@@ -299,8 +336,8 @@ const App: React.FC = () => {
             <div className="bg-gradient-to-br from-purple-800 to-indigo-900 rounded-[64px] p-16 text-white relative overflow-hidden shadow-3xl">
               <div className="relative z-10 max-w-3xl">
                 <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 mb-8">
-                  <div className={`w-2 h-2 ${isSupabaseConfigured() ? 'bg-green-400' : 'bg-amber-400'} rounded-full animate-pulse`}></div>
-                  <span>WeConnect Live Hub {isSupabaseConfigured() ? '(Cloud Connected)' : '(Local Mode)'}</span>
+                  <div className={`w-2 h-2 ${isCloudVerified ? 'bg-green-400' : 'bg-amber-400'} rounded-full animate-pulse`}></div>
+                  <span>WeConnect Live Hub {isCloudVerified ? '(Cloud Connected)' : '(Local Access)'}</span>
                 </div>
                 <h2 className="text-5xl font-black mb-6 tracking-tight">Your Business Hub.</h2>
                 <p className="text-purple-100 text-lg mb-10 font-medium opacity-90 leading-relaxed max-w-xl">
@@ -320,11 +357,14 @@ const App: React.FC = () => {
                 { label: 'Role', value: role.toUpperCase(), trend: 'Identity Verified', color: 'text-purple-600' },
                 { label: 'Live Campaigns', value: campaigns.length.toString(), trend: 'Active', color: 'text-blue-600' },
                 { label: 'Entity Level', value: 'ENTERPRISE', trend: 'Neural Pro', color: 'text-green-600' },
-                { label: 'Storage', value: isSupabaseConfigured() ? 'CLOUD' : 'LOCAL', trend: 'Synced', color: 'text-orange-600' }
+                { label: 'Cloud Handshake', value: isCloudVerified ? 'VERIFIED' : 'LOCAL', trend: isCloudVerified ? 'Live Sync' : 'Demo State', color: isCloudVerified ? 'text-green-600' : 'text-amber-600' }
               ].map(stat => (
-                <div key={stat.label} className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all">
+                <div key={stat.label} className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group">
+                  {stat.label === 'Cloud Handshake' && isCloudVerified && (
+                    <div className="absolute top-4 right-4 w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
+                  )}
                   <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-4">{stat.label}</p>
-                  <p className="text-4xl font-black text-gray-900 tracking-tighter">{stat.value}</p>
+                  <p className="text-3xl font-black text-gray-900 tracking-tighter">{stat.value}</p>
                   <p className={`text-xs mt-3 font-bold ${stat.color}`}>{stat.trend}</p>
                 </div>
               ))}
@@ -351,10 +391,13 @@ const App: React.FC = () => {
                   user={user} 
                   activeEntityId={user.activeEntityId} 
                   onUpdate={(updated) => {
-                    setUser(prev => prev ? ({
-                      ...prev,
-                      entities: prev.entities.map(e => e.id === updated.id ? updated : e)
-                    }) : null);
+                    setUser(prev => {
+                      if (!prev) return null;
+                      return {
+                        ...prev,
+                        entities: prev.entities.map(e => e.id === updated.id ? updated : e)
+                      };
+                    });
                   }} 
                />;
       case 'wallet':
@@ -540,7 +583,7 @@ const App: React.FC = () => {
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Biography & Mission</label>
                 <textarea 
                   placeholder="Describe this brand's mission, target audience, and vibe..." 
-                  className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-bold min-h-[120px] resize-none"
+                  className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-bold min-h-[120px] resize-none shadow-inner"
                   value={newEntity.bio}
                   onChange={e => setNewEntity({...newEntity, bio: e.target.value})}
                 />
