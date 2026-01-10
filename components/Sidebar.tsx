@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Icons } from '../constants';
-import { UserRole } from '../types';
+
+import React from 'react';
+import { Icons, NEURAL_AGENTS } from '../constants';
+import { UserRole, NeuralAgent } from '../types';
 import { isSupabaseConfigured } from '../services/supabase';
 import { isAiReady } from '../services/geminiService';
 
@@ -10,9 +11,10 @@ interface SidebarProps {
   setActiveTab: (tab: string) => void;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
+  onSelectAgent?: (agent: NeuralAgent) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isCollapsed, setIsCollapsed }) => {
+const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isCollapsed, setIsCollapsed, onSelectAgent }) => {
   const isCloudActive = isSupabaseConfigured();
   const isAiActive = isAiReady();
 
@@ -21,7 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isColl
     { id: 'campaigns', label: 'Campaigns', icon: Icons.Campaigns },
     { id: 'discover', label: 'Marketplace', icon: Icons.Discover },
     { id: 'matching', label: 'AI Match', icon: Icons.Robot },
-    { id: 'profile', label: 'My Identity', icon: () => (
+    { id: 'profile', label: 'Identity & Assets', icon: () => (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
     )},
     { id: 'messages', label: 'Messages', icon: Icons.Messages },
@@ -38,12 +40,12 @@ const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isColl
         {isCollapsed ? <Icons.ChevronRight /> : <Icons.ChevronLeft />}
       </button>
 
-      <div className={`flex-1 px-4 space-y-2 mt-12 overflow-hidden`}>
+      <div className={`flex-1 px-4 space-y-1 mt-4 overflow-y-auto no-scrollbar pb-10`}>
         {menuItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4 px-6'} py-4 rounded-2xl transition-all group relative ${
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4 px-6'} py-3.5 rounded-2xl transition-all group relative ${
               activeTab === item.id
                 ? 'bg-purple-600 text-white font-black shadow-xl shadow-purple-100'
                 : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900 font-bold'
@@ -52,9 +54,8 @@ const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isColl
             <div className={`transition-transform group-hover:scale-110 ${activeTab === item.id ? 'text-white' : 'text-gray-400'}`}>
               <item.icon />
             </div>
-            {!isCollapsed && <span className="text-[12px] uppercase tracking-widest whitespace-nowrap opacity-100 transition-opacity duration-300">{item.label}</span>}
+            {!isCollapsed && <span className="text-[11px] uppercase tracking-widest whitespace-nowrap">{item.label}</span>}
             
-            {/* Tooltip for collapsed state */}
             {isCollapsed && (
               <div className="absolute left-full ml-4 px-3 py-2 bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[110]">
                 {item.label}
@@ -62,26 +63,41 @@ const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isColl
             )}
           </button>
         ))}
+
+        {!isCollapsed && (
+          <div className="pt-6 pb-2">
+             <p className="px-6 text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Neural Agents</p>
+             <div className="space-y-0.5">
+                {NEURAL_AGENTS.map(agent => (
+                  <button
+                    key={agent.id}
+                    onClick={() => onSelectAgent?.(agent)}
+                    className="w-full flex items-center space-x-3 px-6 py-2.5 rounded-2xl hover:bg-gray-50 transition-all group"
+                  >
+                    <img src={agent.avatar} className="w-7 h-7 rounded-xl shadow-sm group-hover:scale-110 transition-transform" alt="" />
+                    <div className="text-left">
+                      <p className="text-[10px] font-black text-gray-900 leading-none">{agent.name}</p>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">{agent.role}</p>
+                    </div>
+                  </button>
+                ))}
+             </div>
+          </div>
+        )}
       </div>
       
-      {!isCollapsed && (
-        <div className="p-8 border-t border-gray-50 transition-all duration-300">
-          <div className={`p-6 rounded-[32px] text-white shadow-2xl relative overflow-hidden group transition-all duration-500 ${isCloudActive ? 'bg-gradient-to-br from-green-600 to-teal-600 shadow-green-100' : 'bg-gradient-to-br from-purple-600 to-indigo-600 shadow-purple-100'}`}>
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-150 transition-transform">
-               {isAiActive ? <Icons.Robot /> : <Icons.Settings />}
-            </div>
-            <p className="text-[9px] font-black opacity-60 uppercase tracking-widest mb-1">Status</p>
-            <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full animate-pulse ${isCloudActive ? 'bg-green-300' : 'bg-white'}`}></div>
-              <p className="text-sm font-black tracking-tight">{isCloudActive ? 'Cloud Online' : 'Local Demo'}</p>
-            </div>
-            <div className="mt-3 pt-3 border-t border-white/10">
-              <p className="text-[8px] font-black uppercase tracking-widest opacity-60">AI Core</p>
-              <p className="text-[10px] font-bold">{isAiActive ? 'Gemini 3.0 Live' : 'Simulated Logic'}</p>
-            </div>
+      <div className="p-4 border-t border-gray-50 transition-all duration-300">
+        <div className={`p-3 rounded-[24px] text-white shadow-2xl relative overflow-hidden group transition-all duration-500 ${isCloudActive ? 'bg-gradient-to-br from-green-600 to-teal-600 shadow-green-100' : 'bg-gradient-to-br from-purple-600 to-indigo-600 shadow-purple-100'}`}>
+          <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-150 transition-transform">
+             {isAiActive ? <Icons.Robot /> : <Icons.Settings />}
+          </div>
+          <p className="text-[7px] font-black opacity-60 uppercase tracking-widest mb-0.5">Cloud State</p>
+          <div className="flex items-center space-x-1.5">
+            <div className={`w-1 h-1 rounded-full animate-pulse ${isCloudActive ? 'bg-green-300' : 'bg-white'}`}></div>
+            <p className="text-[10px] font-black tracking-tight">{isCloudActive ? 'Verified' : 'Local Mode'}</p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

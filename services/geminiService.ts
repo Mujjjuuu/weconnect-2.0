@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIAnalysisResult } from "../types";
 
@@ -82,7 +83,7 @@ export const generateCampaignStrategy = async (prompt: string): Promise<any> => 
   }
 };
 
-export const chatWithAi = async (message: string): Promise<string> => {
+export const chatWithAi = async (message: string, systemInstruction?: string): Promise<string> => {
   const ai = getAi();
   if (!ai) return "I'm offline right now.";
 
@@ -91,7 +92,7 @@ export const chatWithAi = async (message: string): Promise<string> => {
       model: 'gemini-3-flash-preview',
       contents: { parts: [{ text: message }] },
       config: {
-        systemInstruction: "You are the WeConnect AI Assistant. Help brands find influencers and help creators optimize their profiles. Be concise, smart, and professional."
+        systemInstruction: systemInstruction || "You are the WeConnect AI Assistant. Help brands find influencers and help creators optimize their profiles. Be concise, smart, and professional."
       },
     });
     
@@ -144,7 +145,7 @@ export const getCriteriaExplanation = async (criteria: string): Promise<string> 
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: 'gemini-3-flash-preview',
       contents: { parts: [{ text: `Explain the AI logic for: "${criteria}". Under 60 words.` }] }
     });
     return response.text || "Logic processing error.";

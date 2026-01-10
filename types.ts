@@ -45,18 +45,29 @@ export interface UserProfile {
   entities: Profile[];
 }
 
+export interface ChatPartner {
+  id: string;
+  name: string;
+  role?: string;
+  avatar: string;
+  greeting: string;
+  systemInstruction: string;
+  color?: string;
+}
+
+export interface NeuralAgent extends ChatPartner {
+  specialty: string;
+}
+
 /**
  * Influencer interface for marketplace and discovery
  */
-export interface Influencer {
-  id: string;
-  name: string;
+export interface Influencer extends ChatPartner {
   handle: string;
   niche: string[];
   followers: string;
   engagementRate: string;
   aiScore: number;
-  avatar: string;
   bio: string;
   location: string;
   workVideos?: string[];

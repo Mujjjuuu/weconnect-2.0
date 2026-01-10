@@ -6,10 +6,9 @@ import { Icons } from '../constants';
 interface PublicProfileViewProps {
   influencer: Influencer;
   onBack: () => void;
-  onSecureDeal: () => void;
+  onSecureDeal: (inf: Influencer) => void;
 }
 
-// Use React.FC to allow the 'key' prop when using this component in a list
 const VideoGridItem: React.FC<{ videoUrl: string; avatarUrl: string }> = ({ videoUrl, avatarUrl }) => {
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -41,7 +40,6 @@ const VideoGridItem: React.FC<{ videoUrl: string; avatarUrl: string }> = ({ vide
         loop 
         playsInline
       />
-      {/* Profile Photo Overlay */}
       <div className={`absolute top-6 right-6 z-20 transition-all duration-500 ${isHovered ? 'scale-110 opacity-100' : 'scale-90 opacity-60'}`}>
         <img src={avatarUrl} className="w-12 h-12 rounded-full border-2 border-white shadow-lg" alt="creator" />
       </div>
@@ -51,7 +49,6 @@ const VideoGridItem: React.FC<{ videoUrl: string; avatarUrl: string }> = ({ vide
 };
 
 const PublicProfileView: React.FC<PublicProfileViewProps> = ({ influencer, onBack, onSecureDeal }) => {
-  // Use mock videos if influencer has none for testing
   const displayVideos = (influencer.workVideos && influencer.workVideos.length > 0) 
     ? influencer.workVideos 
     : [
@@ -98,10 +95,10 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ influencer, onBac
             </div>
 
             <button 
-              onClick={onSecureDeal}
+              onClick={() => onSecureDeal(influencer)}
               className="w-full bg-gray-900 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:bg-black transition-all active:scale-95 flex items-center justify-center space-x-3"
             >
-              <span>Initiate Secure Deal</span>
+              <span>Negotiate with AI</span>
               <Icons.Wallet />
             </button>
           </div>

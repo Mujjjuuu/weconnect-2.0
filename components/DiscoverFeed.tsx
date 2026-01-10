@@ -1,5 +1,4 @@
 
-// Import React to fix namespace error and allow use of React.FC
 import React, { useState, useEffect, useRef } from 'react';
 import { Influencer } from '../types';
 import { Icons } from '../constants';
@@ -22,7 +21,9 @@ const MOCK_INFLUENCERS: Influencer[] = [
     packages: [],
     socialStats: {
       instagram: { followers: 245000, engagementRate: 4.8, verified: true }
-    }
+    },
+    greeting: "Hi there! Sarah here. I saw your campaign interest. I'd love to chat about how my aesthetic fits your brand vision. Shall we collaborate?",
+    systemInstruction: "You are Sarah Jenkins, a professional lifestyle and beauty influencer. You are friendly, fashionable, and selective about brand deals. You speak with a polished yet approachable tone."
   },
   {
     id: '2',
@@ -40,7 +41,9 @@ const MOCK_INFLUENCERS: Influencer[] = [
     packages: [],
     socialStats: {
       youtube: { followers: 102000, engagementRate: 5.2, verified: true }
-    }
+    },
+    greeting: "Hey! Marcus Chen here. I'm all about cinematic quality and high-tech specs. What's the creative brief for the project?",
+    systemInstruction: "You are Marcus Chen, a technical and cinematic influencer. You focus on gear, storytelling, and high production value. You are concise, direct, and care about technical details."
   },
   {
     id: '3',
@@ -55,7 +58,9 @@ const MOCK_INFLUENCERS: Influencer[] = [
     bio: 'Professional artist making complex art simple.',
     location: 'Paris, FR',
     portfolio: [],
-    packages: []
+    packages: [],
+    greeting: "Bonjour! I'm Emily. My studio is open for creative partnerships. Do you have a project that needs an artistic touch?",
+    systemInstruction: "You are Emily White, a creative and whimsical artist. You are enthusiastic about DIY and art. You use gentle, encouraging language and are very creative."
   },
   {
     id: '4',
@@ -70,11 +75,12 @@ const MOCK_INFLUENCERS: Influencer[] = [
     bio: 'Transforming bodies through neural-optimized routines.',
     location: 'Los Angeles, USA',
     portfolio: [],
-    packages: []
+    packages: [],
+    greeting: "Let's go! Volt here. Ready to bring some real energy to your brand? I only partner with companies that share my drive. What've you got?",
+    systemInstruction: "You are Jason Volt, a high-energy fitness influencer. You are motivational, intense, and very focused on health and performance. You use exclamations and strong verbs."
   }
 ];
 
-// Use React.FC to allow the 'key' prop when using this component in a list
 const InfluencerCard: React.FC<{ inf: Influencer; onSelect: () => void; onSecureDeal: () => void }> = ({ inf, onSelect, onSecureDeal }) => {
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -98,7 +104,6 @@ const InfluencerCard: React.FC<{ inf: Influencer; onSelect: () => void; onSecure
       style={{ isolation: 'isolate', backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
       className="group relative overflow-hidden rounded-[56px] aspect-[9/16] bg-gray-900 shadow-3xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-3 cursor-pointer will-change-transform"
     >
-      {/* Background Media */}
       <img 
         src={inf.avatar} 
         alt={inf.name} 
@@ -118,12 +123,10 @@ const InfluencerCard: React.FC<{ inf: Influencer; onSelect: () => void; onSecure
         />
       )}
 
-      {/* Profile Photo Overlay (only visible when hovered) */}
       <div className={`absolute top-8 right-8 z-30 transition-all duration-500 pointer-events-none ${isHovered ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90'}`}>
         <img src={inf.avatar} className="w-16 h-16 rounded-full border-4 border-white shadow-2xl" alt="mini-profile" />
       </div>
 
-      {/* Overlays */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/10 pointer-events-none"></div>
       
       <div className="absolute top-8 left-8 right-8 flex justify-between items-start pointer-events-none">
@@ -164,8 +167,7 @@ const InfluencerCard: React.FC<{ inf: Influencer; onSelect: () => void; onSecure
   );
 };
 
-// Use React.FC to fix namespace errors when using React.FC elsewhere in the file
-const DiscoverFeed: React.FC<{ onSelectInfluencer: (inf: Influencer) => void, onSecureDeal: () => void }> = ({ onSelectInfluencer, onSecureDeal }) => {
+const DiscoverFeed: React.FC<{ onSelectInfluencer: (inf: Influencer) => void, onSecureDeal: (inf: Influencer) => void }> = ({ onSelectInfluencer, onSecureDeal }) => {
   const [influencers, setInfluencers] = useState<Influencer[]>(MOCK_INFLUENCERS);
   const [filter, setFilter] = useState('All');
 
@@ -192,7 +194,9 @@ const DiscoverFeed: React.FC<{ onSelectInfluencer: (inf: Influencer) => void, on
             location: item.location,
             workVideos: item.work_videos || [],
             portfolio: [],
-            packages: []
+            packages: [],
+            greeting: item.greeting,
+            systemInstruction: item.system_instruction
           }));
           setInfluencers(mapped);
         }
@@ -228,7 +232,7 @@ const DiscoverFeed: React.FC<{ onSelectInfluencer: (inf: Influencer) => void, on
             key={inf.id} 
             inf={inf} 
             onSelect={() => onSelectInfluencer(inf)} 
-            onSecureDeal={onSecureDeal} 
+            onSecureDeal={() => onSecureDeal(inf)} 
           />
         ))}
       </div>

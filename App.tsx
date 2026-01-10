@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import DiscoverFeed from './components/DiscoverFeed';
 import AIAnalyzer from './components/AIAnalyzer';
-import AIChatbot from './components/AIChatbot';
+import AIChatbot, { AIChatbotRef } from './components/AIChatbot';
 import MatchingSystem from './components/MatchingSystem';
 import CampaignManager from './components/CampaignManager';
 import Login from './components/Login';
@@ -11,8 +12,8 @@ import ProfileView from './components/ProfileView';
 import PublicProfileView from './components/PublicProfileView';
 import WalletView from './components/WalletView';
 import MessagesView from './components/MessagesView';
-import { UserRole, Campaign, UserProfile, Profile, Influencer } from './types';
-import { Icons, BrandLogo } from './constants';
+import { UserRole, Campaign, UserProfile, Profile, Influencer, NeuralAgent, ChatPartner } from './types';
+import { Icons, BrandLogo, NEURAL_AGENTS } from './constants';
 import { getCampaignForecast, isAiReady } from './services/geminiService';
 import { supabase, seedInitialData, isSupabaseConfigured, testConnection } from './services/supabase';
 
@@ -28,6 +29,7 @@ const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null);
+  const [activeChatPartner, setActiveChatPartner] = useState<ChatPartner | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -43,6 +45,7 @@ const App: React.FC = () => {
   const [forecastResult, setForecastResult] = useState<string | null>(null);
 
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const chatbotRef = useRef<AIChatbotRef>(null);
 
   const [newEntity, setNewEntity] = useState({ 
     fullName: '', 
@@ -193,6 +196,22 @@ const App: React.FC = () => {
       brandId: activeProfile.id
     };
 
+    if (isCloudVerified && supabase) {
+      try {
+        await supabase.from('campaigns').insert([{
+          name: campaignToAdd.name,
+          budget: campaignToAdd.budget,
+          deliverables: campaignToAdd.deliverables,
+          status: campaignToAdd.status,
+          progress: campaignToAdd.progress,
+          influencers_count: campaignToAdd.influencersCount,
+          brand_id: campaignToAdd.brandId
+        }]);
+      } catch (e) {
+        console.error("Cloud campaign sync failed:", e);
+      }
+    }
+
     setCampaigns(prev => [campaignToAdd as any, ...prev]);
     setIsLaunchModalOpen(false);
     setForecastResult(null);
@@ -208,21 +227,30 @@ const App: React.FC = () => {
       const forecast = await getCampaignForecast(newCampaign);
       setForecastResult(forecast);
     } catch (error) {
-      setForecastResult("Forecast engine is currently recalibrating.");
+      setForecastResult("Neural forecasting is temporarily unavailable.");
     } finally {
       setIsForecasting(false);
     }
   };
 
-  const handleSecureDeal = () => {
-    if (!user) setView('login');
-    else setActiveTab('messages');
+  const handleSecureDeal = (inf: Influencer) => {
+    if (!user) {
+      setView('login');
+      return;
+    }
+    setActiveChatPartner(inf);
+    chatbotRef.current?.openWithPartner(inf);
   };
 
   const handleLogout = () => {
     setUser(null);
     setView('landing');
     setIsProfileDropdownOpen(false);
+  };
+
+  const handleSelectAgent = (agent: NeuralAgent) => {
+    setActiveChatPartner(agent);
+    chatbotRef.current?.openWithPartner(agent);
   };
 
   if (view === 'landing') return <LandingPage onEnterLogin={() => setView('login')} onEnterExplore={() => { setView('app'); setActiveTab('discover'); }} />;
@@ -255,29 +283,6 @@ const App: React.FC = () => {
                     <span>Neural Cloud Handshake Complete</span>
                   </div>
                 </div>
-             )}
-
-             {!isCloudVerified && (
-               <div className="bg-amber-50 border border-amber-200 rounded-[32px] p-6 flex items-center justify-between mb-8 shadow-sm">
-                 <div className="flex items-center space-x-4">
-                   <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
-                     <Icons.Settings />
-                   </div>
-                   <div>
-                     <p className="text-amber-900 font-black text-xs uppercase tracking-widest">Developer Note: Demo Mode</p>
-                     <p className="text-amber-700 text-[11px] font-medium">Add <code className="bg-amber-200/50 px-1 rounded">SUPABASE_ANON_KEY</code> and <code className="bg-amber-200/50 px-1 rounded">API_KEY</code> to GitHub Secrets to go live.</p>
-                   </div>
-                 </div>
-                 <div className="flex space-x-4">
-                   <button 
-                    onClick={initCloud}
-                    className="text-[10px] bg-amber-200/50 hover:bg-amber-200 px-4 py-2 rounded-xl font-black uppercase text-amber-900 tracking-widest transition-all"
-                   >
-                     Retry Sync
-                   </button>
-                   <a href="https://github.com/features/actions" target="_blank" className="text-[10px] font-black uppercase text-amber-900 underline tracking-widest flex items-center">Setup Guide</a>
-                 </div>
-               </div>
              )}
 
              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -375,7 +380,27 @@ const App: React.FC = () => {
                 <CampaignManager sharedCampaigns={campaigns} onUpdateCampaigns={(newList) => setCampaigns(newList)} />
               </div>
               <div className="space-y-12">
-                <AIChatbot />
+                <div className="bg-white p-10 rounded-[48px] border border-gray-100 shadow-sm">
+                   <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-6">Active Agents</h3>
+                   <div className="space-y-4">
+                      {NEURAL_AGENTS.map(agent => (
+                        <button 
+                          key={agent.id}
+                          onClick={() => handleSelectAgent(agent)}
+                          className="w-full flex items-center justify-between p-6 rounded-3xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all group"
+                        >
+                           <div className="flex items-center space-x-4">
+                              <img src={agent.avatar} className="w-12 h-12 rounded-2xl shadow-sm group-hover:scale-110 transition-transform" alt="" />
+                              <div className="text-left">
+                                <p className="font-black text-gray-900 leading-none">{agent.name}</p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{agent.role}</p>
+                              </div>
+                           </div>
+                           <div className={`w-3 h-3 ${agent.color} rounded-full opacity-40 group-hover:opacity-100 transition-opacity`}></div>
+                        </button>
+                      ))}
+                   </div>
+                </div>
               </div>
             </div>
           </div>
@@ -403,7 +428,7 @@ const App: React.FC = () => {
       case 'wallet':
         return <WalletView user={user} />;
       case 'messages':
-        return <MessagesView user={user} />;
+        return <MessagesView user={user} initialPartner={activeChatPartner} />;
       default:
         return <div className="text-center py-40 text-gray-400 font-bold uppercase tracking-widest">Loading...</div>;
     }
@@ -411,8 +436,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8f9fb]">
-      <div className="neural-mesh"></div>
-
       <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-b border-gray-100 z-[100] h-20 flex items-center px-10">
         <div className="flex items-center space-x-4 mr-16 cursor-pointer group" onClick={() => { if (user) setActiveTab('dashboard'); else setView('landing'); }}>
           <div className="group-hover:scale-105 transition-all">
@@ -492,8 +515,8 @@ const App: React.FC = () => {
             </>
           ) : (
             <>
-              <button onClick={() => setView('login')} className="text-gray-900 font-black text-xs uppercase tracking-widest px-6 py-3">Login</button>
-              <button onClick={() => setView('signup')} className="bg-purple-600 text-white font-black text-xs uppercase tracking-widest px-8 py-3 rounded-2xl shadow-xl shadow-purple-200">Get Started</button>
+              <button onClick={() => setView('login')} className="text-gray-900 font-black text-xs uppercase tracking-widest px-6 py-3 active:scale-95">Login</button>
+              <button onClick={() => setView('signup')} className="bg-purple-600 text-white font-black text-xs uppercase tracking-widest px-8 py-3 rounded-2xl shadow-xl shadow-purple-200 active:scale-95">Get Started</button>
             </>
           )}
         </div>
@@ -506,6 +529,7 @@ const App: React.FC = () => {
           setActiveTab={setActiveTab} 
           isCollapsed={isCollapsed} 
           setIsCollapsed={setIsCollapsed} 
+          onSelectAgent={handleSelectAgent}
         />
       )}
 
@@ -513,175 +537,7 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
 
-      {/* Entity Creation Modal */}
-      {isCreateEntityOpen && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-8 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
-          <div className="bg-white rounded-[48px] shadow-3xl w-full max-w-2xl my-auto overflow-hidden flex flex-col animate-in zoom-in duration-500">
-            <div className="p-10 bg-gray-900 text-white flex justify-between items-center">
-              <div>
-                <h2 className="text-3xl font-black tracking-tight">Create New Brand</h2>
-                <p className="text-purple-400 text-[10px] font-black uppercase tracking-widest mt-1">Expansion Hub</p>
-              </div>
-              <button onClick={() => setIsCreateEntityOpen(false)} className="hover:bg-white/10 p-2 rounded-xl transition-all"><Icons.Close /></button>
-            </div>
-            <div className="p-10 space-y-6 max-h-[70vh] overflow-y-auto no-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Brand Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Acme Studio" 
-                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-bold"
-                    value={newEntity.fullName}
-                    onChange={e => setNewEntity({...newEntity, fullName: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Industry</label>
-                  <select 
-                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-bold appearance-none"
-                    value={newEntity.industry}
-                    onChange={e => setNewEntity({...newEntity, industry: e.target.value})}
-                  >
-                    <option>Technology</option>
-                    <option>Beauty & Health</option>
-                    <option>Travel</option>
-                    <option>Fashion</option>
-                    <option>Finance</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Identity Type</label>
-                  <div className="flex gap-4">
-                    {(['brand', 'influencer'] as UserRole[]).map(r => (
-                      <button 
-                        key={r}
-                        onClick={() => setNewEntity({...newEntity, role: r})}
-                        className={`flex-1 p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${newEntity.role === r ? 'bg-purple-600 text-white shadow-lg' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Official Website</label>
-                  <input 
-                    type="url" 
-                    placeholder="https://..." 
-                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-bold"
-                    value={newEntity.website}
-                    onChange={e => setNewEntity({...newEntity, website: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Biography & Mission</label>
-                <textarea 
-                  placeholder="Describe this brand's mission, target audience, and vibe..." 
-                  className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-bold min-h-[120px] resize-none shadow-inner"
-                  value={newEntity.bio}
-                  onChange={e => setNewEntity({...newEntity, bio: e.target.value})}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Primary Location</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. New York, USA" 
-                  className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-bold"
-                  value={newEntity.location}
-                  onChange={e => setNewEntity({...newEntity, location: e.target.value})}
-                />
-              </div>
-
-              <button 
-                onClick={handleCreateNewEntity}
-                disabled={!newEntity.fullName || !newEntity.bio}
-                className="w-full py-6 bg-purple-600 text-white rounded-3xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-purple-700 transition-all active:scale-95 disabled:opacity-30 mt-4"
-              >
-                Confirm and Sync New Brand
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Campaign Launch Modal */}
-      {isLaunchModalOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-8 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white rounded-[48px] shadow-3xl w-full max-w-xl overflow-hidden flex flex-col animate-in zoom-in duration-500">
-            <div className="p-10 bg-gray-900 text-white flex justify-between items-center">
-              <div>
-                <h2 className="text-3xl font-black tracking-tight">New Campaign</h2>
-                <p className="text-purple-400 text-[10px] font-black uppercase tracking-widest mt-1">Syncing to {activeProfile?.fullName}</p>
-              </div>
-              <button onClick={() => setIsLaunchModalOpen(false)} className="hover:bg-white/10 p-2 rounded-xl transition-all"><Icons.Close /></button>
-            </div>
-            <div className="p-10 space-y-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Campaign Title</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Winter Skincare Drive" 
-                  className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 shadow-inner" 
-                  onChange={(e) => setNewCampaign({...newCampaign, name: e.target.value})} 
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Platform</label>
-                  <select 
-                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 appearance-none shadow-inner"
-                    onChange={(e) => setNewCampaign({...newCampaign, platform: e.target.value})}
-                  >
-                    <option>TikTok</option>
-                    <option>Instagram</option>
-                    <option>YouTube</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Budget</label>
-                  <input 
-                    type="text" 
-                    placeholder="$1,000" 
-                    className="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 shadow-inner" 
-                    onChange={(e) => setNewCampaign({...newCampaign, budget: e.target.value})} 
-                  />
-                </div>
-              </div>
-              
-              <div className="pt-4 space-y-4">
-                <button 
-                  onClick={handleGetForecast} 
-                  disabled={isForecasting || !newCampaign.name}
-                  className="w-full py-5 bg-purple-50 text-purple-700 rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-purple-100 transition-all flex items-center justify-center space-x-3 border border-purple-100"
-                >
-                  {isForecasting ? <div className="w-5 h-5 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin"></div> : <Icons.Robot />}
-                  <span>{isForecasting ? 'Simulating Strategy...' : 'AI Performance Forecast'}</span>
-                </button>
-                {forecastResult && (
-                  <div className="p-6 bg-gray-900 rounded-3xl text-sm italic font-medium text-gray-300 border border-white/5 leading-relaxed">
-                    "{forecastResult}"
-                  </div>
-                )}
-                <button 
-                  onClick={handleLaunchCampaign} 
-                  disabled={!newCampaign.name || !newCampaign.budget}
-                  className="w-full py-6 bg-purple-600 text-white rounded-3xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-purple-700 transition-all active:scale-[0.98] disabled:opacity-30"
-                >
-                  Confirm and Sync to Cloud
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <AIChatbot ref={chatbotRef} />
     </div>
   );
 };
