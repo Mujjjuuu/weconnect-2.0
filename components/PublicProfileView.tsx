@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Influencer } from '../types';
 import { Icons } from '../constants';
+import { formatCount } from '../services/youtubeService';
 
 interface PublicProfileViewProps {
   influencer: Influencer;
@@ -57,6 +58,9 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ influencer, onBac
         'https://cdn.pixabay.com/video/2021/08/17/85341-588804910_tiny.mp4'
       ];
 
+  const ytStats = influencer.socialLinks?.youtube?.stats;
+  const igStats = influencer.socialLinks?.instagram?.stats;
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-6 animate-in fade-in slide-in-from-bottom-12 duration-700">
       <button 
@@ -86,11 +90,15 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ influencer, onBac
             <div className="grid grid-cols-2 gap-6 w-full mb-10">
               <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Followers</p>
-                <p className="text-3xl font-black text-gray-900 tracking-tighter">{influencer.followers}</p>
+                <p className="text-3xl font-black text-gray-900 tracking-tighter">
+                  {ytStats ? formatCount(ytStats.followers) : influencer.followers}
+                </p>
               </div>
               <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Engagement</p>
-                <p className="text-3xl font-black text-purple-600 tracking-tighter">{influencer.engagementRate}</p>
+                <p className="text-3xl font-black text-purple-600 tracking-tighter">
+                  {ytStats ? `${ytStats.engagementRate}%` : influencer.engagementRate}
+                </p>
               </div>
             </div>
 
@@ -138,31 +146,45 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ influencer, onBac
           </div>
           
           <div className="bg-white rounded-[64px] p-12 border border-gray-100 shadow-sm">
-             <h3 className="text-2xl font-black text-gray-900 mb-8 tracking-tight">Social Connectivity</h3>
+             <h3 className="text-2xl font-black text-gray-900 mb-8 tracking-tight">Verified Social Presence</h3>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-               <div className="p-8 bg-purple-50 rounded-[40px] border border-purple-100 flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                     <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-purple-600 shadow-sm">
-                        <Icons.Discover />
-                     </div>
-                     <div>
-                        <p className="font-black text-gray-900 leading-none">Instagram</p>
-                        <p className="text-purple-600 font-black uppercase mt-1 text-[10px]">Verified</p>
-                     </div>
-                  </div>
-                  <p className="text-xl font-black text-gray-900 tracking-tighter">{influencer.followers}</p>
-               </div>
-               <div className="p-8 bg-red-50 rounded-[40px] border border-red-100 flex items-center justify-between">
+               <div className={`p-8 bg-red-50 rounded-[40px] border border-red-100 flex items-center justify-between transition-all ${ytStats ? 'opacity-100 scale-100' : 'opacity-40 grayscale'}`}>
                   <div className="flex items-center space-x-4">
                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-red-600 shadow-sm">
                         <Icons.Campaigns />
                      </div>
                      <div>
                         <p className="font-black text-gray-900 leading-none">YouTube</p>
-                        <p className="text-red-600 font-black uppercase mt-1 text-[10px]">Verified</p>
+                        <p className={`font-black uppercase mt-1 text-[10px] ${ytStats ? 'text-red-600' : 'text-gray-400'}`}>
+                           {ytStats ? 'API Verified' : 'Unlinked'}
+                        </p>
                      </div>
                   </div>
-                  <p className="text-xl font-black text-gray-900 tracking-tighter">89K</p>
+                  <div className="text-right">
+                    <p className="text-xl font-black text-gray-900 tracking-tighter">
+                      {ytStats ? formatCount(ytStats.followers) : influencer.followers}
+                    </p>
+                    {ytStats && <p className="text-[9px] font-black uppercase text-gray-400">Total Views: {formatCount(ytStats.avgLikes * (ytStats.followers / 10))}</p>}
+                  </div>
+               </div>
+               
+               <div className={`p-8 bg-purple-50 rounded-[40px] border border-purple-100 flex items-center justify-between transition-all ${igStats ? 'opacity-100 scale-100' : 'opacity-40 grayscale'}`}>
+                  <div className="flex items-center space-x-4">
+                     <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-purple-600 shadow-sm">
+                        <Icons.Discover />
+                     </div>
+                     <div>
+                        <p className="font-black text-gray-900 leading-none">Instagram</p>
+                        <p className={`font-black uppercase mt-1 text-[10px] ${igStats ? 'text-purple-600' : 'text-gray-400'}`}>
+                           {igStats ? 'API Verified' : 'Unlinked'}
+                        </p>
+                     </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-black text-gray-900 tracking-tighter">
+                      {igStats ? formatCount(igStats.followers) : '—'}
+                    </p>
+                  </div>
                </div>
              </div>
           </div>

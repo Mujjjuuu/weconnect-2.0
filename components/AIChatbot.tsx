@@ -19,8 +19,9 @@ const AIChatbot = forwardRef<AIChatbotRef, {}>((props, ref) => {
   useImperativeHandle(ref, () => ({
     openWithPartner: (partner: ChatPartner) => {
       setActivePartner(partner);
+      // Logic for embody character: set up a specialized initial state if not chatting before
       setMessages([
-        { id: Date.now().toString(), senderId: 'AI', receiverId: 'user', text: partner.greeting, timestamp: new Date().toLocaleTimeString(), isAi: true }
+        { id: Date.now().toString(), senderId: partner.id, receiverId: 'user', text: partner.greeting || "Hello!", timestamp: new Date().toLocaleTimeString(), isAi: true }
       ]);
       setIsOpen(true);
     }
@@ -33,17 +34,27 @@ const AIChatbot = forwardRef<AIChatbotRef, {}>((props, ref) => {
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMsg: Message = { id: Date.now().toString(), senderId: 'You', receiverId: 'AI', text: input, timestamp: new Date().toLocaleTimeString() };
+    const userMsg: Message = { id: Date.now().toString(), senderId: 'user', receiverId: activePartner.id, text: input, timestamp: new Date().toLocaleTimeString() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
 
     try {
-      const response = await chatWithAi(input, activePartner.systemInstruction);
-      const aiMsg: Message = { id: (Date.now() + 1).toString(), senderId: 'AI', receiverId: 'You', text: response, timestamp: new Date().toLocaleTimeString(), isAi: true };
+      // Enrich prompt with personality context
+      const personalityContext = `
+        Your name is ${activePartner.name}.
+        Your domain expertise: ${activePartner.role || 'Digital Presence'}.
+        Character Bio: ${(activePartner as any).bio || 'A professional on WeConnect.'}
+        ${(activePartner as any).niche ? `You operate in these niches: ${(activePartner as any).niche.join(', ')}.` : ''}
+        Instruction: ${activePartner.systemInstruction}
+        IMPORTANT: Respond as the person described above. Embody their personality, style, and professional context.
+      `;
+
+      const response = await chatWithAi(input, personalityContext);
+      const aiMsg: Message = { id: (Date.now() + 1).toString(), senderId: activePartner.id, receiverId: 'user', text: response, timestamp: new Date().toLocaleTimeString(), isAi: true };
       setMessages(prev => [...prev, aiMsg]);
     } catch (e) {
-      const errorMsg: Message = { id: (Date.now() + 1).toString(), senderId: 'AI', receiverId: 'You', text: "Sorry, I'm having a little trouble connecting. Please try again in a second!", timestamp: new Date().toLocaleTimeString(), isAi: true };
+      const errorMsg: Message = { id: (Date.now() + 1).toString(), senderId: activePartner.id, receiverId: 'user', text: "Apologies, my neural link is flickering. One moment!", timestamp: new Date().toLocaleTimeString(), isAi: true };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
@@ -61,8 +72,8 @@ const AIChatbot = forwardRef<AIChatbotRef, {}>((props, ref) => {
             <div className="flex items-center space-x-4 relative z-10">
               <img src={activePartner.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white/20 shadow-xl" alt="" />
               <div>
-                <span className="font-black text-lg tracking-tight">{activePartner.name}</span>
-                <div className="flex items-center space-x-2">
+                <span className="font-black text-lg tracking-tight leading-none block">{activePartner.name}</span>
+                <div className="flex items-center space-x-2 mt-1">
                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
                    <span className="text-[9px] font-black uppercase tracking-widest text-white/70">{activePartner.role || 'Partner'} Online</span>
                 </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Campaign, AIAnalysisResult } from '../types';
 import { Icons } from '../constants';
@@ -199,7 +200,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ sharedCampaigns, onUp
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="Example: Promote my new eco-friendly energy drink targeting urban commuters with active lifestyles..."
-                className="w-full p-6 bg-white border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 min-h-[160px] resize-none font-bold text-gray-900 shadow-sm"
+                className="w-full p-6 bg-white border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 min-h-[160px] resize-none font-bold text-black shadow-sm"
                />
                <button 
                 onClick={handleAiAssist}
@@ -220,7 +221,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ sharedCampaigns, onUp
                   type="text" 
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full p-6 bg-gray-50 border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 text-lg shadow-inner"
+                  className="w-full p-6 bg-gray-50 border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-black text-lg shadow-inner"
                   placeholder="e.g. Winter Peak Skincare"
                 />
               </div>
@@ -232,7 +233,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ sharedCampaigns, onUp
                     type="text" 
                     value={formData.budget}
                     onChange={(e) => setFormData({...formData, budget: e.target.value})}
-                    className="w-full p-6 bg-gray-50 border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 shadow-inner"
+                    className="w-full p-6 bg-gray-50 border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-black shadow-inner"
                     placeholder="$1,000"
                   />
                 </div>
@@ -241,7 +242,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ sharedCampaigns, onUp
                   <select 
                     value={formData.platform}
                     onChange={(e) => setFormData({...formData, platform: e.target.value})}
-                    className="w-full p-6 bg-gray-50 border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 appearance-none shadow-inner"
+                    className="w-full p-6 bg-gray-50 border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-black appearance-none shadow-inner"
                   >
                     <option>Instagram</option>
                     <option>TikTok</option>
@@ -256,7 +257,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ sharedCampaigns, onUp
                 <textarea 
                   value={formData.deliverables}
                   onChange={(e) => setFormData({...formData, deliverables: e.target.value})}
-                  className="w-full p-6 bg-gray-50 border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-gray-900 min-h-[120px] resize-none shadow-inner"
+                  className="w-full p-6 bg-gray-50 border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 font-black text-black min-h-[120px] resize-none shadow-inner"
                   placeholder="e.g. 2 Reels, 5 Stories, 1 Static Post"
                 />
               </div>

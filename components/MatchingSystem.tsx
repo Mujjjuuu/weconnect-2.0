@@ -3,14 +3,20 @@ import React, { useState } from 'react';
 import { Icons } from '../constants';
 import { getMatchAnalysis } from '../services/geminiService';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
+import { Influencer } from '../types';
 
 const MOCK_FALLBACK: any[] = [
-  { id: '1', name: 'Sarah Jenkins', handle: '@sarahj_lifestyle', niche: ['Beauty', 'Lifestyle'], followers: '245K', engagementRate: '4.8%', avatar: 'https://images.pexels.com/photos/1181682/pexels-photo-1181682.jpeg?auto=compress&cs=tinysrgb&w=800' },
-  { id: '2', name: 'Marcus Chen', handle: '@marcus_visuals', niche: ['Travel', 'Tech'], followers: '102K', engagementRate: '5.2%', avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=800' },
-  { id: '3', name: 'Emily White', handle: '@emily.w.art', niche: ['Art', 'DIY'], followers: '89K', engagementRate: '6.1%', avatar: 'https://images.pexels.com/photos/1181519/pexels-photo-1181519.jpeg?auto=compress&cs=tinysrgb&w=800' }
+  { id: '1', name: 'Sarah Jenkins', handle: '@sarahj_lifestyle', niche: ['Beauty', 'Lifestyle'], followers: '245K', engagementRate: '4.8%', avatar: 'https://images.pexels.com/photos/1181682/pexels-photo-1181682.jpeg?auto=compress&cs=tinysrgb&w=800', aiScore: 98, bio: 'Elite Lifestyle & Tech Creator.', location: 'NYC', portfolio: [], packages: [], systemInstruction: "You are Sarah Jenkins.", greeting: "Hi, let's chat!" },
+  { id: '2', name: 'Marcus Chen', handle: '@marcus_visuals', niche: ['Travel', 'Tech'], followers: '102K', engagementRate: '5.2%', avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=800', aiScore: 92, bio: 'Cinematic storyteller.', location: 'London', portfolio: [], packages: [], systemInstruction: "You are Marcus Chen.", greeting: "Hey there!" },
+  { id: '3', name: 'Emily White', handle: '@emily.w.art', niche: ['Art', 'DIY'], followers: '89K', engagementRate: '6.1%', avatar: 'https://images.pexels.com/photos/1181519/pexels-photo-1181519.jpeg?auto=compress&cs=tinysrgb&w=800', aiScore: 84, bio: 'Professional artist.', location: 'Paris', portfolio: [], packages: [], systemInstruction: "You are Emily White.", greeting: "Bonjour!" }
 ];
 
-const MatchingSystem: React.FC = () => {
+interface MatchingSystemProps {
+  onSecureDeal?: (inf: Influencer) => void;
+  onViewProfile?: (inf: Influencer) => void;
+}
+
+const MatchingSystem: React.FC<MatchingSystemProps> = ({ onSecureDeal, onViewProfile }) => {
   const [requirements, setRequirements] = useState({
     niche: 'Beauty',
     goal: 'Increase Awareness',
@@ -32,21 +38,27 @@ const MatchingSystem: React.FC = () => {
       let candidates: any[] = [];
       if (isSupabaseConfigured()) {
         const { data } = await supabase.from('influencers').select('*');
-        candidates = (data && data.length > 0) ? data.map(d => ({...d, engagementRate: d.engagement_rate, aiScore: d.ai_score})) : MOCK_FALLBACK;
+        candidates = (data && data.length > 0) ? data.map(d => ({
+          ...d, 
+          engagementRate: d.engagement_rate, 
+          aiScore: d.ai_score,
+          greeting: d.greeting || "Hello! Ready to collaborate?",
+          systemInstruction: d.system_instruction || "You are a professional influencer."
+        })) : MOCK_FALLBACK;
       } else {
         candidates = MOCK_FALLBACK;
       }
 
       const matchPromises = candidates.map(async (inf) => {
-        const score = 75 + Math.floor(Math.random() * 23);
+        const baseScore = 75 + Math.floor(Math.random() * 15);
         const explanation = await getMatchAnalysis(requirements, inf);
-        return { ...inf, matchScore: score, aiReasoning: explanation };
+        return { ...inf, matchScore: baseScore, aiReasoning: explanation };
       });
 
       const finalMatches = await Promise.all(matchPromises);
       setMatches(finalMatches.sort((a, b) => b.matchScore - a.matchScore));
     } catch (error) {
-      setMatches(MOCK_FALLBACK.map(inf => ({...inf, matchScore: 85, aiReasoning: "Excellent alignment based on audience demographics."})));
+      setMatches(MOCK_FALLBACK.map(inf => ({...inf, matchScore: 85, aiReasoning: "• High Affinity: Targeted reach.\n• Content Fit: Visual synergy.\n• ROI Prophecy: Strong growth potential."})));
     } finally {
       setIsSearching(false);
     }
@@ -112,30 +124,51 @@ const MatchingSystem: React.FC = () => {
           ) : (
             <div className="space-y-8">
               {matches.map((match, idx) => (
-                <div key={idx} className="bg-white p-10 rounded-[56px] border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col md:flex-row items-center md:items-start group relative overflow-hidden">
-                  <div className="flex flex-col items-center mb-8 md:mb-0 mr-0 md:mr-10 shrink-0">
-                    <div className="relative">
-                      <img src={match.avatar} className="w-36 h-36 rounded-[40px] object-cover shadow-2xl" alt="" />
-                      <div className="absolute -bottom-4 -right-4 bg-purple-600 text-white w-16 h-16 flex flex-col items-center justify-center rounded-2xl font-black border-4 border-white shadow-2xl">
-                        <span className="text-[8px] opacity-60 uppercase tracking-widest leading-none mb-1">Match</span>
-                        <span className="text-xl leading-none">{match.matchScore}%</span>
+                <div key={idx} className="bg-white p-10 rounded-[56px] border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col items-stretch group relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row items-center md:items-start">
+                    <div className="flex flex-col items-center mb-8 md:mb-0 mr-0 md:mr-10 shrink-0">
+                      <div className="relative">
+                        <img src={match.avatar} className="w-36 h-36 rounded-[40px] object-cover shadow-2xl" alt="" />
+                        <div className="absolute -bottom-4 -right-4 bg-purple-600 text-white w-16 h-16 flex flex-col items-center justify-center rounded-2xl font-black border-4 border-white shadow-2xl">
+                          <span className="text-[8px] opacity-60 uppercase tracking-widest leading-none mb-1">Synergy</span>
+                          <span className="text-xl leading-none">{match.matchScore}%</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex-1 space-y-6">
-                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-                      <div>
-                        <h4 className="text-3xl font-black text-gray-900 tracking-tighter leading-none mb-2">{match.name}</h4>
-                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{match.handle} • {match.niche.join(', ')}</p>
+                    <div className="flex-1 space-y-4">
+                      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+                        <div>
+                          <h4 className="text-3xl font-black text-gray-900 tracking-tighter leading-none mb-2">{match.name}</h4>
+                          <div className="flex items-center space-x-3">
+                             <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{match.handle} • {match.niche.join(', ')}</p>
+                             <div className="px-3 py-1 bg-green-50 text-green-600 text-[8px] font-black uppercase tracking-widest rounded-full">Top Recommendation</div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                           <button 
+                            onClick={() => onSecureDeal?.(match)}
+                            className="bg-gray-900 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95 shadow-lg"
+                           >
+                            Negotiate Now
+                           </button>
+                           <button 
+                            onClick={() => onViewProfile?.(match)}
+                            className="bg-white border-2 border-gray-100 text-gray-700 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-purple-200 transition-all active:scale-95"
+                           >
+                            Profile
+                           </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="bg-gray-900 rounded-[32px] p-8 relative overflow-hidden shadow-xl">
-                      <h5 className="text-[8px] font-black uppercase text-purple-400 mb-3 tracking-[0.3em]">Neural Recommendation</h5>
-                      <p className="text-sm text-gray-300 leading-relaxed font-bold italic opacity-90">"{match.aiReasoning}"</p>
-                    </div>
-                    <div className="flex gap-3 pt-2">
-                      <button className="bg-gray-900 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95">Initiate Deal</button>
-                      <button className="bg-white border-2 border-gray-100 text-gray-700 px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-purple-200 transition-all active:scale-95">Profile</button>
+                      
+                      <div className="bg-purple-50/50 rounded-[32px] p-8 border border-purple-100/50 relative overflow-hidden">
+                        <div className="flex items-center space-x-3 mb-4">
+                           <div className="p-2 bg-purple-600 text-white rounded-xl scale-75"><Icons.Robot /></div>
+                           <h5 className="text-[10px] font-black uppercase text-purple-600 tracking-widest">Neural Diagnostic</h5>
+                        </div>
+                        <div className="text-sm text-gray-700 leading-relaxed font-bold whitespace-pre-wrap">
+                           {match.aiReasoning}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
