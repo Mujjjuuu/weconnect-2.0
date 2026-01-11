@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } f
 import { Icons, NEURAL_AGENTS, BrandLogo } from '../constants';
 import { chatWithAi } from '../services/geminiService';
 import { Message, ChatPartner } from '../types';
+import VoiceDictationButton from './VoiceDictationButton';
 
 export interface AIChatbotRef {
   openWithPartner: (partner: ChatPartner) => void;
@@ -114,19 +115,28 @@ const AIChatbot = forwardRef<AIChatbotRef, {}>((props, ref) => {
 
           {/* Input */}
           <div className="p-8 bg-white border-t border-gray-100">
-            <div className="relative group">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder={`Chat with ${activePartner.name}...`}
-                className="w-full pl-6 pr-16 py-5 bg-gray-50 border border-gray-100 rounded-[28px] focus:ring-4 focus:ring-purple-100 focus:bg-white outline-none transition-all font-bold text-gray-900 text-sm shadow-inner"
-              />
+            <div className="flex items-center space-x-2">
+              <div className="relative flex-1 group">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  placeholder={`Chat with ${activePartner.name}...`}
+                  className="w-full pl-6 pr-12 py-5 bg-gray-50 border border-gray-100 rounded-[28px] focus:ring-4 focus:ring-purple-100 focus:bg-white outline-none transition-all font-bold text-gray-900 text-sm shadow-inner"
+                />
+                <div className="absolute right-3 top-3">
+                   <VoiceDictationButton 
+                    onTranscript={(text) => setInput(prev => prev + (prev ? ' ' : '') + text)}
+                    className="p-3 bg-transparent text-gray-300 hover:text-purple-600 shadow-none border-none scale-90"
+                    color="bg-transparent"
+                   />
+                </div>
+              </div>
               <button
                 onClick={handleSend}
                 disabled={isLoading || !input.trim()}
-                className={`absolute right-3 top-3 p-3 text-white rounded-[20px] transition-all shadow-xl disabled:opacity-20 active:scale-95 ${partnerColor}`}
+                className={`p-4 text-white rounded-[20px] transition-all shadow-xl disabled:opacity-20 active:scale-95 shrink-0 ${partnerColor}`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </button>

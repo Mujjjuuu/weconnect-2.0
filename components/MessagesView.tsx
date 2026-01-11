@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, Message, Influencer, ChatPartner } from '../types';
 import { Icons } from '../constants';
 import { chatWithAi } from '../services/geminiService';
+import VoiceDictationButton from './VoiceDictationButton';
 
 interface MessagesViewProps {
   user: UserProfile;
@@ -206,21 +207,30 @@ const MessagesView: React.FC<MessagesViewProps> = ({ user, initialPartner }) => 
                 </div>
                 
                 <div className="p-10 border-t border-gray-50">
-                  <div className="relative">
-                      <input 
-                        value={input}
-                        onChange={e => setInput(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleSend()}
-                        placeholder={`Message ${activePartner.name}...`} 
-                        className="w-full bg-gray-50 border border-gray-100 rounded-[32px] px-10 py-6 outline-none focus:ring-4 focus:ring-purple-50 font-bold text-gray-900 shadow-inner" 
-                      />
-                      <button 
-                        onClick={handleSend}
-                        className="absolute right-4 top-4 p-4 bg-gray-900 text-white rounded-2xl hover:bg-black transition-all active:scale-95 disabled:opacity-20"
-                        disabled={isLoading || !input.trim()}
-                      >
-                        <Icons.ChevronRight />
-                      </button>
+                  <div className="flex items-center space-x-4">
+                    <div className="relative flex-1 group">
+                        <input 
+                          value={input}
+                          onChange={e => setInput(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && handleSend()}
+                          placeholder={`Message ${activePartner.name}...`} 
+                          className="w-full bg-gray-50 border border-gray-100 rounded-[32px] pl-10 pr-16 py-6 outline-none focus:ring-4 focus:ring-purple-50 font-bold text-gray-900 shadow-inner" 
+                        />
+                        <div className="absolute right-4 top-4">
+                           <VoiceDictationButton 
+                            onTranscript={(text) => setInput(prev => prev + (prev ? ' ' : '') + text)}
+                            className="bg-transparent text-gray-300 hover:text-purple-600 shadow-none scale-110"
+                            color="bg-transparent"
+                           />
+                        </div>
+                    </div>
+                    <button 
+                      onClick={handleSend}
+                      className="p-5 bg-gray-900 text-white rounded-2xl hover:bg-black transition-all active:scale-95 disabled:opacity-20 shrink-0"
+                      disabled={isLoading || !input.trim()}
+                    >
+                      <Icons.ChevronRight />
+                    </button>
                   </div>
                 </div>
               </div>

@@ -4,6 +4,7 @@ import { Campaign, AIAnalysisResult } from '../types';
 import { Icons } from '../constants';
 import { analyzeContent, getPostCampaignInsights, generateCampaignStrategy } from '../services/geminiService';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
+import VoiceDictationButton from './VoiceDictationButton';
 
 interface CampaignManagerProps {
   sharedCampaigns: Campaign[];
@@ -196,12 +197,21 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ sharedCampaigns, onUp
                  <span>Neural Strategist Assist</span>
                </div>
                <p className="text-gray-600 font-medium">Describe your vision. AI will generate a performance-optimized strategy.</p>
-               <textarea 
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="Example: Promote my new eco-friendly energy drink targeting urban commuters with active lifestyles..."
-                className="w-full p-6 bg-white border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 min-h-[160px] resize-none font-bold text-black shadow-sm"
-               />
+               <div className="relative">
+                  <textarea 
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Example: Promote my new eco-friendly energy drink targeting urban commuters with active lifestyles..."
+                    className="w-full p-6 pb-16 bg-white border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-purple-100 min-h-[160px] resize-none font-bold text-black shadow-sm"
+                  />
+                  <div className="absolute bottom-4 right-4 flex items-center space-x-2">
+                     <VoiceDictationButton 
+                      onTranscript={(text) => setAiPrompt(prev => prev + (prev ? ' ' : '') + text)}
+                      className="bg-gray-100 text-gray-400 hover:text-purple-600 shadow-none border-none scale-90"
+                      color="bg-gray-100"
+                     />
+                  </div>
+               </div>
                <button 
                 onClick={handleAiAssist}
                 disabled={isAiLoading || !aiPrompt}
