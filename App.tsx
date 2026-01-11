@@ -12,6 +12,7 @@ import ProfileView from './components/ProfileView';
 import PublicProfileView from './components/PublicProfileView';
 import WalletView from './components/WalletView';
 import MessagesView from './components/MessagesView';
+import AiChatView from './components/AiChatView';
 import { UserRole, Campaign, UserProfile, Profile, Influencer, NeuralAgent, ChatPartner } from './types';
 import { Icons, BrandLogo, NEURAL_AGENTS } from './constants';
 import { getCampaignForecast, isAiReady } from './services/geminiService';
@@ -250,9 +251,7 @@ const App: React.FC = () => {
   };
 
   const handleSelectAgent = (agent: NeuralAgent) => {
-    setActiveChatPartner(agent);
-    setActiveTab('messages');
-    chatbotRef.current?.openWithPartner(agent);
+    setActiveTab('ai_chat');
   };
 
   if (view === 'landing') return <LandingPage onEnterLogin={() => setView('login')} onEnterExplore={() => { setView('app'); setActiveTab('discover'); }} />;
@@ -392,7 +391,9 @@ const App: React.FC = () => {
                           className="w-full flex items-center justify-between p-6 rounded-[28px] hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all group"
                         >
                            <div className="flex items-center space-x-5">
-                              <img src={agent.avatar} className="w-14 h-14 rounded-2xl object-cover shadow-sm group-hover:scale-110 transition-transform duration-500" alt="" />
+                              <div className={`w-14 h-14 rounded-2xl ${agent.color} flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform duration-500`}>
+                                 <Icons.Robot />
+                              </div>
                               <div className="text-left">
                                 <p className="font-black text-gray-900 leading-tight">{agent.name}</p>
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{agent.role}</p>
@@ -413,6 +414,8 @@ const App: React.FC = () => {
         return <DiscoverFeed onSelectInfluencer={(inf) => { setSelectedInfluencer(inf); setActiveTab('public_profile'); }} onSecureDeal={handleSecureDeal} />;
       case 'matching':
         return <MatchingSystem onSecureDeal={handleSecureDeal} onViewProfile={(inf) => { setSelectedInfluencer(inf); setActiveTab('public_profile'); }} />;
+      case 'ai_chat':
+        return <AiChatView user={user} />;
       case 'profile':
         return <ProfileView 
                   user={user} 
@@ -452,6 +455,7 @@ const App: React.FC = () => {
               <div className="hidden lg:flex space-x-10 text-[11px] font-black uppercase tracking-[0.2em] text-gray-400">
                 <button onClick={() => setActiveTab('discover')} className={`hover:text-purple-600 transition-colors ${activeTab === 'discover' ? 'text-purple-600' : ''}`}>Marketplace</button>
                 <button onClick={() => setActiveTab('matching')} className={`hover:text-purple-600 transition-colors ${activeTab === 'matching' ? 'text-purple-600' : ''}`}>AI Match</button>
+                <button onClick={() => setActiveTab('ai_chat')} className={`hover:text-purple-600 transition-colors ${activeTab === 'ai_chat' ? 'text-purple-600' : ''}`}>AI Chat</button>
               </div>
               <div className="h-8 w-[2px] bg-gray-100"></div>
               

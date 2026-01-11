@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Icons, NEURAL_AGENTS } from '../constants';
+import { Icons } from '../constants';
 import { UserRole, NeuralAgent } from '../types';
 import { isSupabaseConfigured } from '../services/supabase';
 import { isAiReady } from '../services/geminiService';
@@ -14,7 +14,7 @@ interface SidebarProps {
   onSelectAgent?: (agent: NeuralAgent) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isCollapsed, setIsCollapsed, onSelectAgent }) => {
+const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isCollapsed, setIsCollapsed }) => {
   const isCloudActive = isSupabaseConfigured();
   const isAiActive = isAiReady();
 
@@ -23,10 +23,11 @@ const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isColl
     { id: 'campaigns', label: 'Campaigns', icon: Icons.Campaigns },
     { id: 'discover', label: 'Marketplace', icon: Icons.Discover },
     { id: 'matching', label: 'AI Match', icon: Icons.Robot },
+    { id: 'ai_chat', label: 'AI Chat', icon: Icons.Robot },
     { id: 'profile', label: 'Identity & Assets', icon: () => (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
     )},
-    { id: 'messages', label: 'Messages', icon: Icons.Messages },
+    { id: 'messages', label: 'Influencer Chat', icon: Icons.Messages },
     { id: 'wallet', label: 'Wallet', icon: Icons.Wallet },
   ];
 
@@ -63,27 +64,6 @@ const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, isColl
             )}
           </button>
         ))}
-
-        {!isCollapsed && (
-          <div className="pt-6 pb-2">
-             <p className="px-6 text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Neural Agents</p>
-             <div className="space-y-0.5">
-                {NEURAL_AGENTS.map(agent => (
-                  <button
-                    key={agent.id}
-                    onClick={() => onSelectAgent?.(agent)}
-                    className="w-full flex items-center space-x-3 px-6 py-2.5 rounded-2xl hover:bg-gray-50 transition-all group"
-                  >
-                    <img src={agent.avatar} className="w-7 h-7 rounded-xl shadow-sm group-hover:scale-110 transition-transform" alt="" />
-                    <div className="text-left">
-                      <p className="text-[10px] font-black text-gray-900 leading-none">{agent.name}</p>
-                      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">{agent.role}</p>
-                    </div>
-                  </button>
-                ))}
-             </div>
-          </div>
-        )}
       </div>
       
       <div className="p-4 border-t border-gray-50 transition-all duration-300">
