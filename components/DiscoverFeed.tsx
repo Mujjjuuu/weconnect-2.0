@@ -20,7 +20,8 @@ const MOCK_INFLUENCERS: Influencer[] = [
     portfolio: [],
     packages: [],
     socialStats: {
-      instagram: { followers: 245000, engagementRate: 4.8, verified: true }
+      instagram: { followers: 245000, engagementRate: 4.8, verified: true },
+      youtube: { followers: 120000, engagementRate: 3.2, verified: false }
     },
     greeting: "Hi there! Sarah here. I saw your campaign interest. I'd love to chat about how my aesthetic fits your brand vision. Shall we collaborate?",
     systemInstruction: "You are Sarah Jenkins, a professional lifestyle and beauty influencer. You are friendly, fashionable, and selective about brand deals. You speak with a polished yet approachable tone."
@@ -40,7 +41,8 @@ const MOCK_INFLUENCERS: Influencer[] = [
     portfolio: [],
     packages: [],
     socialStats: {
-      youtube: { followers: 102000, engagementRate: 5.2, verified: true }
+      youtube: { followers: 102000, engagementRate: 5.2, verified: true },
+      instagram: { followers: 45000, engagementRate: 4.1, verified: true }
     },
     greeting: "Hey! Marcus Chen here. I'm all about cinematic quality and high-tech specs. What's the creative brief for the project?",
     systemInstruction: "You are Marcus Chen, a technical and cinematic influencer. You focus on gear, storytelling, and high production value. You are concise, direct, and care about technical details."
@@ -59,6 +61,10 @@ const MOCK_INFLUENCERS: Influencer[] = [
     location: 'Paris, FR',
     portfolio: [],
     packages: [],
+    socialStats: {
+      instagram: { followers: 89000, engagementRate: 6.1, verified: true },
+      tiktok: { followers: 150000, engagementRate: 8.4, verified: false }
+    },
     greeting: "Bonjour! I'm Emily. My studio is open for creative partnerships. Do you have a project that needs an artistic touch?",
     systemInstruction: "You are Emily White, a creative and whimsical artist. You are enthusiastic about DIY and art. You use gentle, encouraging language and are very creative."
   },
@@ -76,6 +82,10 @@ const MOCK_INFLUENCERS: Influencer[] = [
     location: 'Los Angeles, USA',
     portfolio: [],
     packages: [],
+    socialStats: {
+      instagram: { followers: 512000, engagementRate: 3.9, verified: true },
+      youtube: { followers: 800000, engagementRate: 2.1, verified: true }
+    },
     greeting: "Let's go! Volt here. Ready to bring some real energy to your brand? I only partner with companies that share my drive. What've you got?",
     systemInstruction: "You are Jason Volt, a high-energy fitness influencer. You are motivational, intense, and very focused on health and performance. You use exclamations and strong verbs."
   },
@@ -93,6 +103,10 @@ const MOCK_INFLUENCERS: Influencer[] = [
     location: 'Seoul, SK',
     portfolio: [],
     packages: [],
+    socialStats: {
+      youtube: { followers: 1200000, engagementRate: 7.4, verified: true },
+      tiktok: { followers: 2000000, engagementRate: 9.1, verified: true }
+    },
     greeting: "GG! I'm Alex. Always looking for the next piece of gear to give me an edge. Want to collab on some high-performance content?",
     systemInstruction: "You are Alex Rivera, a professional gamer. You use gaming slang, are very energetic, and talk a lot about frame rates, RGB lighting, and skill-based competition."
   },
@@ -110,6 +124,10 @@ const MOCK_INFLUENCERS: Influencer[] = [
     location: 'Bali, ID',
     portfolio: [],
     packages: [],
+    socialStats: {
+      instagram: { followers: 330000, engagementRate: 5.5, verified: true },
+      youtube: { followers: 150000, engagementRate: 4.8, verified: false }
+    },
     greeting: "Namaste. I am Maya. My community values authenticity and inner peace. How can we work together to bring more light into the world?",
     systemInstruction: "You are Maya Sharma, a serene and mindful wellness influencer. Your tone is calm, spiritual, and deeply encouraging. You prioritize holistic health and mental well-being."
   },
@@ -127,6 +145,10 @@ const MOCK_INFLUENCERS: Influencer[] = [
     location: 'Chicago, USA',
     portfolio: [],
     packages: [],
+    socialStats: {
+      youtube: { followers: 156000, engagementRate: 4.2, verified: true },
+      instagram: { followers: 88000, engagementRate: 3.1, verified: false }
+    },
     greeting: "Cole here. The markets are moving fast. If you've got a fintech product or a platform that adds real value, let's talk numbers.",
     systemInstruction: "You are David Cole, a sharp-witted finance influencer. You are data-driven, business-oriented, and value time. You speak in a direct, professional, and slightly authoritative manner."
   },
@@ -144,6 +166,10 @@ const MOCK_INFLUENCERS: Influencer[] = [
     location: 'Paris, FR',
     portfolio: [],
     packages: [],
+    socialStats: {
+      instagram: { followers: 680000, engagementRate: 3.5, verified: true },
+      tiktok: { followers: 900000, engagementRate: 5.2, verified: true }
+    },
     greeting: "Bonjour darling. Chloe Dubois here. My audience demands nothing but the most exquisite aesthetics. Is your brand ready for the runway?",
     systemInstruction: "You are Chloe Dubois, a sophisticated luxury fashion influencer. You use words like 'exquisite', 'curated', and 'aesthetic'. You are polite but have very high standards for quality."
   },
@@ -161,6 +187,10 @@ const MOCK_INFLUENCERS: Influencer[] = [
     location: 'Rome, IT',
     portfolio: [],
     packages: [],
+    socialStats: {
+      youtube: { followers: 890000, engagementRate: 6.8, verified: true },
+      instagram: { followers: 420000, engagementRate: 5.4, verified: true }
+    },
     greeting: "Ciao! Chef Luca here. In my kitchen, we only use the best ingredients. If you have a product that tastes amazing, let's cook something up!",
     systemInstruction: "You are Chef Luca, a passionate and friendly culinary influencer. You are warm, hospitable, and talk enthusiastically about flavors, freshness, and the joy of cooking."
   },
@@ -178,6 +208,10 @@ const MOCK_INFLUENCERS: Influencer[] = [
     location: 'Vancouver, CA',
     portfolio: [],
     packages: [],
+    socialStats: {
+      instagram: { followers: 115000, engagementRate: 8.2, verified: true },
+      tiktok: { followers: 230000, engagementRate: 9.5, verified: false }
+    },
     greeting: "Hey! Zoe here. I'm dedicated to circular fashion and zero-waste travel. Do you have a sustainable solution for my community?",
     systemInstruction: "You are Zoe Green, a dedicated eco-conscious influencer. You are idealistic, knowledgeable about sustainability, and very protective of your audience against greenwashing."
   }
@@ -203,13 +237,12 @@ const InfluencerCard: React.FC<{ inf: Influencer; onSelect: () => void; onSecure
     <div 
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      style={{ isolation: 'isolate', backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
-      className="group relative overflow-hidden rounded-[56px] aspect-[9/16] bg-gray-900 shadow-3xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-3 cursor-pointer will-change-transform"
+      className="group relative overflow-hidden rounded-[40px] aspect-[4/5] bg-gray-900 shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-2 cursor-pointer will-change-transform border border-gray-100/10"
     >
       <img 
         src={inf.avatar} 
         alt={inf.name} 
-        className={`absolute inset-0 w-full h-full object-cover grayscale-[0.1] transition-all duration-1000 ${isHovered ? 'opacity-0 scale-110' : 'opacity-100 scale-100'}`} 
+        className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ${isHovered ? 'opacity-0 scale-110 blur-lg' : 'opacity-100 scale-100'}`} 
         onClick={onSelect}
       />
       
@@ -225,44 +258,47 @@ const InfluencerCard: React.FC<{ inf: Influencer; onSelect: () => void; onSecure
         />
       )}
 
-      <div className={`absolute top-8 right-8 z-30 transition-all duration-500 pointer-events-none ${isHovered ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90'}`}>
-        <img src={inf.avatar} className="w-16 h-16 rounded-full border-4 border-white shadow-2xl" alt="mini-profile" />
-      </div>
-
-      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/10 pointer-events-none"></div>
+      {/* Dynamic Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none transition-opacity duration-500 group-hover:via-black/40"></div>
       
-      <div className="absolute top-8 left-8 right-8 flex justify-between items-start pointer-events-none">
-        <div className="bg-white/10 backdrop-blur-xl px-4 py-2 rounded-2xl text-white text-[9px] font-black uppercase tracking-widest border border-white/20 flex items-center space-x-2">
+      {/* Top Badges */}
+      <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-30">
+        <div className="bg-black/40 backdrop-blur-xl px-3 py-1.5 rounded-xl text-white text-[9px] font-black uppercase tracking-widest border border-white/10 flex items-center space-x-2">
           <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
           <span>{inf.aiScore}% Match</span>
         </div>
+        <button onClick={(e) => { e.stopPropagation(); onSelect(); }} className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white/20 hover:bg-white/20 transition-all pointer-events-auto">
+           <Icons.ChevronRight />
+        </button>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-10 text-white transform translate-y-6 group-hover:translate-y-0 transition-transform duration-500 z-20">
-        <div className="mb-8" onClick={onSelect}>
-            <h3 className="font-black text-3xl leading-none tracking-tight mb-2">{inf.name}</h3>
-            <div className="flex items-center space-x-3">
-               <span className="text-xs font-bold text-white/50 uppercase tracking-widest">{inf.handle}</span>
-               {inf.socialStats?.instagram?.verified && <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[8px]">✓</div>}
+      {/* Bottom Content - Fixed for Font Protrusion */}
+      <div className="absolute bottom-0 left-0 right-0 p-8 text-white z-20">
+        <div className="mb-4" onClick={onSelect}>
+            <h3 className="font-black text-2xl leading-none tracking-tight mb-1 truncate max-w-full">{inf.name}</h3>
+            <div className="flex items-center space-x-2 overflow-hidden">
+               <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest truncate">{inf.handle}</span>
+               {inf.socialStats?.instagram?.verified && <div className="shrink-0 w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center text-[7px]">✓</div>}
             </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 bg-white/5 backdrop-blur-xl rounded-[32px] p-6 mb-8 border border-white/10 pointer-events-none">
-          <div className="text-center">
-            <p className="text-[8px] font-black uppercase tracking-widest opacity-50 mb-1">Followers</p>
-            <p className="font-black text-2xl tracking-tighter">{inf.followers}</p>
+        {/* Info Grid - Re-balanced */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl py-3 px-4 border border-white/10">
+            <p className="text-[7px] font-black uppercase tracking-widest opacity-50 mb-0.5">Reach</p>
+            <p className="font-black text-xl tracking-tighter leading-none">{inf.followers}</p>
           </div>
-          <div className="text-center border-l border-white/10">
-            <p className="text-[8px] font-black uppercase tracking-widest opacity-50 mb-1">Engagement</p>
-            <p className="font-black text-2xl tracking-tighter text-purple-400">{inf.engagementRate}</p>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl py-3 px-4 border border-white/10">
+            <p className="text-[7px] font-black uppercase tracking-widest opacity-50 mb-0.5">Impact</p>
+            <p className="font-black text-xl tracking-tighter leading-none text-purple-400">{inf.engagementRate}</p>
           </div>
         </div>
 
         <button 
           onClick={(e) => { e.stopPropagation(); onSecureDeal(); }}
-          className="w-full bg-white text-gray-900 font-black text-[11px] uppercase tracking-[0.3em] py-6 rounded-[28px] transition-all shadow-2xl hover:bg-purple-600 hover:text-white"
+          className="w-full bg-white text-gray-900 font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-[18px] transition-all shadow-xl hover:bg-purple-600 hover:text-white active:scale-95"
         >
-          Initiate Secure Deal
+          Secure Deal
         </button>
       </div>
     </div>
@@ -298,7 +334,8 @@ const DiscoverFeed: React.FC<{ onSelectInfluencer: (inf: Influencer) => void, on
             portfolio: [],
             packages: [],
             greeting: item.greeting,
-            systemInstruction: item.system_instruction
+            systemInstruction: item.system_instruction,
+            socialStats: item.social_stats || {}
           }));
           setInfluencers(mapped);
         }
@@ -314,21 +351,21 @@ const DiscoverFeed: React.FC<{ onSelectInfluencer: (inf: Influencer) => void, on
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-6 animate-in fade-in duration-1000">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
         <div>
-          <h1 className="text-6xl font-black text-gray-900 tracking-tighter text-balance">Verified Marketplace.</h1>
-          <p className="text-gray-500 mt-2 font-medium text-xl">Access AI-vetted creators with high-definition previews.</p>
+          <h1 className="text-5xl lg:text-7xl font-black text-gray-900 tracking-tighter text-balance">Neural Feed.</h1>
+          <p className="text-gray-500 mt-3 font-medium text-xl">Access AI-vetted creators with cinematic precision.</p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
            {niches.map(n => (
-             <button key={n} onClick={() => setFilter(n)} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === n ? 'bg-purple-600 text-white shadow-2xl shadow-purple-200' : 'bg-white border border-gray-100 text-gray-500 hover:border-purple-200 shadow-sm'}`}>
+             <button key={n} onClick={() => setFilter(n)} className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${filter === n ? 'bg-purple-600 text-white shadow-xl shadow-purple-100' : 'bg-white border border-gray-100 text-gray-400 hover:border-purple-200 shadow-sm'}`}>
                {n}
              </button>
            ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 lg:gap-12">
         {filtered.map((inf) => (
           <InfluencerCard 
             key={inf.id} 
