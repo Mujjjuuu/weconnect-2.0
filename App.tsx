@@ -89,6 +89,11 @@ const App: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [view, user?.id]);
 
+  // Scroll to top when view changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view, activeTab]);
+
   const fetchUserCampaigns = async () => {
     if (!user || !activeProfile || !supabase || !isCloudVerified) {
       setCampaigns([]);
@@ -258,13 +263,10 @@ const App: React.FC = () => {
   if (view === 'login' || view === 'signup') return <Login onLoginComplete={handleLoginComplete} onCancel={() => setView('landing')} initialMode={view === 'signup' ? 'signup' : 'login'} />;
 
   const renderContent = () => {
-    if (!user || !activeProfile) return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-    const role = activeProfile.role;
-
+    // Public tabs that don't require user login
+    if (activeTab === 'discover') {
+      return <DiscoverFeed onSelectInfluencer={(inf) => { setSelectedInfluencer(inf); setActiveTab('public_profile'); }} onSecureDeal={handleSecureDeal} />;
+    }
     if (activeTab === 'public_profile' && selectedInfluencer) {
         return <PublicProfileView 
                   influencer={selectedInfluencer} 
@@ -272,6 +274,21 @@ const App: React.FC = () => {
                   onSecureDeal={handleSecureDeal}
                />;
     }
+
+    // Tabs that DO require user login
+    if (!user || !activeProfile) {
+      // If we are on any other tab and user is not logged in, redirect to login or show discovery
+      if (view === 'app') {
+        return <DiscoverFeed onSelectInfluencer={(inf) => { setSelectedInfluencer(inf); setActiveTab('public_profile'); }} onSecureDeal={handleSecureDeal} />;
+      }
+      return (
+        <div className="h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      );
+    }
+    
+    const role = activeProfile.role;
 
     switch (activeTab) {
       case 'dashboard':

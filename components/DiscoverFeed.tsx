@@ -78,6 +78,108 @@ const MOCK_INFLUENCERS: Influencer[] = [
     packages: [],
     greeting: "Let's go! Volt here. Ready to bring some real energy to your brand? I only partner with companies that share my drive. What've you got?",
     systemInstruction: "You are Jason Volt, a high-energy fitness influencer. You are motivational, intense, and very focused on health and performance. You use exclamations and strong verbs."
+  },
+  {
+    id: '5',
+    name: 'Alex Rivera',
+    handle: '@alex_plays',
+    niche: ['Gaming', 'Tech'],
+    followers: '1.2M',
+    engagementRate: '7.4%',
+    aiScore: 99,
+    avatar: 'https://images.pexels.com/photos/7915357/pexels-photo-7915357.jpeg?auto=compress&cs=tinysrgb&w=800',
+    workVideos: ['https://cdn.pixabay.com/video/2022/10/05/133649-756910609_tiny.mp4'],
+    bio: 'Top-tier esports athlete and PC hardware enthusiast.',
+    location: 'Seoul, SK',
+    portfolio: [],
+    packages: [],
+    greeting: "GG! I'm Alex. Always looking for the next piece of gear to give me an edge. Want to collab on some high-performance content?",
+    systemInstruction: "You are Alex Rivera, a professional gamer. You use gaming slang, are very energetic, and talk a lot about frame rates, RGB lighting, and skill-based competition."
+  },
+  {
+    id: '6',
+    name: 'Maya Sharma',
+    handle: '@maya_wellness',
+    niche: ['Health', 'Lifestyle'],
+    followers: '330K',
+    engagementRate: '5.5%',
+    aiScore: 91,
+    avatar: 'https://images.pexels.com/photos/1051838/pexels-photo-1051838.jpeg?auto=compress&cs=tinysrgb&w=800',
+    workVideos: ['https://cdn.pixabay.com/video/2021/05/20/74929-553641774_tiny.mp4'],
+    bio: 'Yoga instructor and mindfulness coach helping you find your center.',
+    location: 'Bali, ID',
+    portfolio: [],
+    packages: [],
+    greeting: "Namaste. I am Maya. My community values authenticity and inner peace. How can we work together to bring more light into the world?",
+    systemInstruction: "You are Maya Sharma, a serene and mindful wellness influencer. Your tone is calm, spiritual, and deeply encouraging. You prioritize holistic health and mental well-being."
+  },
+  {
+    id: '7',
+    name: 'David Cole',
+    handle: '@cole_capital',
+    niche: ['Finance', 'Tech'],
+    followers: '156K',
+    engagementRate: '4.2%',
+    aiScore: 88,
+    avatar: 'https://images.pexels.com/photos/3777943/pexels-photo-3777943.jpeg?auto=compress&cs=tinysrgb&w=800',
+    workVideos: ['https://cdn.pixabay.com/video/2020/07/28/45791-445892552_tiny.mp4'],
+    bio: 'Breaking down market trends and high-growth investment strategies.',
+    location: 'Chicago, USA',
+    portfolio: [],
+    packages: [],
+    greeting: "Cole here. The markets are moving fast. If you've got a fintech product or a platform that adds real value, let's talk numbers.",
+    systemInstruction: "You are David Cole, a sharp-witted finance influencer. You are data-driven, business-oriented, and value time. You speak in a direct, professional, and slightly authoritative manner."
+  },
+  {
+    id: '8',
+    name: 'Chloe Dubois',
+    handle: '@chloe_couture',
+    niche: ['Fashion', 'Lifestyle'],
+    followers: '680K',
+    engagementRate: '3.5%',
+    aiScore: 95,
+    avatar: 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=800',
+    workVideos: ['https://cdn.pixabay.com/video/2023/11/27/190884-888497672_tiny.mp4'],
+    bio: 'High fashion editorial and luxury lifestyle curation.',
+    location: 'Paris, FR',
+    portfolio: [],
+    packages: [],
+    greeting: "Bonjour darling. Chloe Dubois here. My audience demands nothing but the most exquisite aesthetics. Is your brand ready for the runway?",
+    systemInstruction: "You are Chloe Dubois, a sophisticated luxury fashion influencer. You use words like 'exquisite', 'curated', and 'aesthetic'. You are polite but have very high standards for quality."
+  },
+  {
+    id: '9',
+    name: 'Chef Luca',
+    handle: '@luca_kitchen',
+    niche: ['Food', 'Lifestyle'],
+    followers: '890K',
+    engagementRate: '6.8%',
+    aiScore: 93,
+    avatar: 'https://images.pexels.com/photos/887827/pexels-photo-887827.jpeg?auto=compress&cs=tinysrgb&w=800',
+    workVideos: ['https://cdn.pixabay.com/video/2021/04/09/70498-536338148_tiny.mp4'],
+    bio: 'Modern twists on traditional Italian recipes. Simple, fresh, and delicious.',
+    location: 'Rome, IT',
+    portfolio: [],
+    packages: [],
+    greeting: "Ciao! Chef Luca here. In my kitchen, we only use the best ingredients. If you have a product that tastes amazing, let's cook something up!",
+    systemInstruction: "You are Chef Luca, a passionate and friendly culinary influencer. You are warm, hospitable, and talk enthusiastically about flavors, freshness, and the joy of cooking."
+  },
+  {
+    id: '10',
+    name: 'Zoe Green',
+    handle: '@zoe_eco',
+    niche: ['Lifestyle', 'Travel'],
+    followers: '115K',
+    engagementRate: '8.2%',
+    aiScore: 97,
+    avatar: 'https://images.pexels.com/photos/343717/pexels-photo-343717.jpeg?auto=compress&cs=tinysrgb&w=800',
+    workVideos: ['https://cdn.pixabay.com/video/2023/11/02/187425-880290510_tiny.mp4'],
+    bio: 'Sustainable living advocate and eco-traveler. Let\'s save the planet in style.',
+    location: 'Vancouver, CA',
+    portfolio: [],
+    packages: [],
+    greeting: "Hey! Zoe here. I'm dedicated to circular fashion and zero-waste travel. Do you have a sustainable solution for my community?",
+    systemInstruction: "You are Zoe Green, a dedicated eco-conscious influencer. You are idealistic, knowledgeable about sustainability, and very protective of your audience against greenwashing."
   }
 ];
 
@@ -207,7 +309,7 @@ const DiscoverFeed: React.FC<{ onSelectInfluencer: (inf: Influencer) => void, on
     fetchCreators();
   }, []);
 
-  const niches = ['All', 'Beauty', 'Lifestyle', 'Travel', 'Tech', 'Fitness', 'Art'];
+  const niches = ['All', 'Beauty', 'Lifestyle', 'Travel', 'Tech', 'Fitness', 'Art', 'Gaming', 'Food', 'Health', 'Fashion'];
   const filtered = filter === 'All' ? influencers : influencers.filter(inf => inf.niche.includes(filter));
 
   return (

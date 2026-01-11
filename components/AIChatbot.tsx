@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { Icons, NEURAL_AGENTS } from '../constants';
+import { Icons, NEURAL_AGENTS, BrandLogo } from '../constants';
 import { chatWithAi } from '../services/geminiService';
 import { Message, ChatPartner } from '../types';
 
@@ -136,10 +136,10 @@ const AIChatbot = forwardRef<AIChatbotRef, {}>((props, ref) => {
       ) : (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-20 h-20 bg-purple-600 text-white rounded-[30px] shadow-[0_20px_60px_-15px_rgba(124,58,237,0.5)] flex items-center justify-center hover:scale-110 hover:-translate-y-2 transition-all active:scale-95 group relative"
+          className="w-14 h-14 bg-white border border-purple-100 rounded-2xl shadow-xl flex items-center justify-center hover:scale-110 hover:-translate-y-1 transition-all active:scale-95 group relative"
         >
-          <Icons.Robot />
-          <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-400 border-4 border-white rounded-full"></div>
+          <BrandLogo size="sm" />
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
         </button>
       )}
     </div>
